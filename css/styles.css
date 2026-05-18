@@ -1,0 +1,31 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap');
+
+/* Drag and Drop styles */
+.drop-zone { 
+    transition: all 0.2s ease; 
+}
+.drop-zone.dragover { 
+    background-color: rgba(227, 6, 19, 0.05); /* Match the hover state of the design */
+    border-color: #e30613; /* Primary color */
+}
+
+/* Hide scrollbars for cleaner look */
+.no-scrollbar::-webkit-scrollbar { 
+    display: none; 
+}
+.no-scrollbar { 
+    -ms-overflow-style: none; 
+    scrollbar-width: none; 
+}
+
+/* Tab active state styles */
+.tab-btn.active-tab {
+    border-bottom-color: #e30613; /* Primary */
+    color: #e30613;
+    font-weight: 700;
+}
+.tab-btn {
+    border-bottom-color: transparent;
+    transition: all 0.2s;
+}

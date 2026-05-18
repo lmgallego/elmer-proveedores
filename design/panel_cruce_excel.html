@@ -1,0 +1,227 @@
+<!DOCTYPE html><html class="light" lang="es"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>elmer AUTOMOCIÓN - Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;family=JetBrains+Mono:wght@500&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "secondary": "#5f5e5e",
+                        "primary": "#b5000b",
+                        "tertiary-fixed-dim": "#c7c6c6",
+                        "tertiary": "#585959",
+                        "surface-container-high": "#e8e8e8",
+                        "on-secondary-fixed-variant": "#474746",
+                        "on-surface": "#1a1c1c",
+                        "on-secondary-container": "#636262",
+                        "on-primary-fixed-variant": "#930007",
+                        "on-primary-fixed": "#410001",
+                        "on-tertiary-fixed": "#1b1c1c",
+                        "outline-variant": "#e9bcb6",
+                        "on-secondary": "#ffffff",
+                        "on-tertiary": "#ffffff",
+                        "surface-container": "#eeeeee",
+                        "tertiary-container": "#717171",
+                        "secondary-container": "#e2dfde",
+                        "on-background": "#1a1c1c",
+                        "primary-fixed-dim": "#ffb4aa",
+                        "inverse-on-surface": "#f1f1f1",
+                        "surface-dim": "#dadada",
+                        "surface-variant": "#e2e2e2",
+                        "on-secondary-fixed": "#1c1b1b",
+                        "on-primary-container": "#fff5f3",
+                        "inverse-primary": "#ffb4aa",
+                        "surface-bright": "#f9f9f9",
+                        "inverse-surface": "#2f3131",
+                        "on-error": "#ffffff",
+                        "tertiary-fixed": "#e4e2e2",
+                        "surface-container-highest": "#e2e2e2",
+                        "surface": "#f9f9f9",
+                        "on-surface-variant": "#5e3f3b",
+                        "on-tertiary-container": "#f8f6f6",
+                        "on-tertiary-fixed-variant": "#464747",
+                        "surface-container-lowest": "#ffffff",
+                        "on-error-container": "#93000a",
+                        "secondary-fixed-dim": "#c8c6c5",
+                        "on-primary": "#ffffff",
+                        "surface-tint": "#c0000c",
+                        "outline": "#936e69",
+                        "surface-container-low": "#f3f3f3",
+                        "primary-fixed": "#ffdad5",
+                        "background": "#f9f9f9",
+                        "primary-container": "#e30613",
+                        "error-container": "#ffdad6",
+                        "error": "#ba1a1a",
+                        "secondary-fixed": "#e5e2e1"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "xs": "4px",
+                        "gutter": "24px",
+                        "md": "16px",
+                        "margin-desktop": "40px",
+                        "xl": "32px",
+                        "unit": "4px",
+                        "margin-mobile": "16px",
+                        "sm": "8px",
+                        "lg": "24px"
+                    },
+                    "fontFamily": {
+                        "body-lg": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "button": ["Inter"],
+                        "label-md": ["JetBrains Mono"],
+                        "headline-sm": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "body-md": ["Inter"]
+                    },
+                    "fontSize": {
+                        "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+                        "button": ["14px", { "lineHeight": "20px", "fontWeight": "600" }],
+                        "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "500" }],
+                        "headline-sm": ["20px", { "lineHeight": "28px", "fontWeight": "600" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }]
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-background text-on-background min-h-screen flex antialiased">
+<!-- SideNavBar -->
+<nav class="hidden md:flex text-primary docked left-0 h-full w-64 border-r flex-col py-lg px-md shrink-0 bg-white border-gray-100">
+<div class="mb-xl">
+<img alt="elmer logo" class="h-12 w-auto mb-md" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBt7jgl80TUYKh6uvaGtcwmWsMC04jiMD933VZsjCAB1UrFSV4yeO08L2I-toT4mbpMz-k1n4roWV2rGf0a9MTJssuPBNt327pgrsROoySCEzRH2_Z94BpeqOvLi37fv6q3PrA6v7XdtzquUnUqo0wBxrLKkxKN4nAwszRnfNxO1UHkpGuzHPiwDN6nhcYqaCBKSUj6D2c5-JZDE4RhNfBTgP8j8JtQmzQwrQqdB-8iFnOetkOxJkeo4dnwToi1Getl2GgenfuyehjP">
+<h1 class="text-headline-sm font-headline-lg text-primary">CrossTool</h1>
+<p class="font-label-md text-label-md text-on-surface-variant mt-xs">Automotive Data v1.0</p>
+</div>
+<button class="bg-primary-container text-on-primary font-button text-button uppercase py-sm px-md rounded hover:bg-[#B3050F] transition-colors mb-xl flex items-center justify-center gap-sm">
+<span class="material-symbols-outlined" data-icon="add" style="font-variation-settings: 'FILL' 0;">add</span>
+            New Cross
+        </button>
+<ul class="space-y-sm flex-1">
+<li class="">
+<a class="flex items-center gap-md py-sm px-md bg-primary text-on-primary font-bold rounded-lg transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined" data-icon="desktop_windows" style="font-variation-settings: 'FILL' 1;">desktop_windows</span>
+<span class="font-label-md text-label-md">Workspace</span>
+</a>
+</li>
+<li class="">
+<a class="flex items-center gap-md py-sm px-md text-on-surface-variant hover:bg-surface-container-high hover:bg-secondary-container transition-all duration-200 ease-in-out rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="folder_open" style="font-variation-settings: 'FILL' 0;">folder_open</span>
+<span class="font-label-md text-label-md">My Files</span>
+</a>
+</li>
+<li class="">
+<a class="flex items-center gap-md py-sm px-md text-on-surface-variant hover:bg-surface-container-high hover:bg-secondary-container transition-all duration-200 ease-in-out rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="compare_arrows" style="font-variation-settings: 'FILL' 0;">compare_arrows</span>
+<span class="font-label-md text-label-md">Cross History</span>
+</a>
+</li>
+<li class="">
+<a class="flex items-center gap-md py-sm px-md text-on-surface-variant hover:bg-surface-container-high hover:bg-secondary-container transition-all duration-200 ease-in-out rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="contact_support" style="font-variation-settings: 'FILL' 0;">contact_support</span>
+<span class="font-label-md text-label-md">Support</span>
+</a>
+</li>
+</ul>
+</nav>
+<div class="flex-1 flex flex-col min-w-0">
+<!-- TopNavBar -->
+<header class="bg-surface text-primary font-body-lg text-body-lg docked full-width top-0 flex justify-between items-center px-margin-desktop h-16 w-full shrink-0">
+<div class="flex items-center gap-lg md:hidden">
+<span class="text-headline-sm font-headline-sm font-bold text-primary">elmer AUTOMOCIÓN</span>
+</div>
+<div class="hidden md:flex items-center gap-xl">
+<span class="text-headline-sm font-headline-sm font-bold text-primary">elmer AUTOMOCIÓN</span>
+<nav class="flex gap-lg">
+<a class="text-primary border-b-2 border-primary pb-1 cursor-pointer active:opacity-80" href="#">Dashboard</a>
+<a class="text-secondary hover:text-primary cursor-pointer active:opacity-80" href="#">History</a>
+<a class="text-secondary hover:text-primary cursor-pointer active:opacity-80" href="#">Settings</a>
+</nav>
+</div>
+<div class="flex items-center gap-md">
+<button class="text-secondary hover:bg-surface-container transition-colors p-sm rounded-full cursor-pointer active:opacity-80">
+<span class="material-symbols-outlined" data-icon="help">help</span>
+</button>
+<button class="text-secondary hover:bg-surface-container transition-colors p-sm rounded-full cursor-pointer active:opacity-80">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<div class="h-8 w-8 rounded-full bg-secondary-container overflow-hidden cursor-pointer">
+<img alt="User profile" class="h-full w-full object-cover" data-alt="A professional headshot of a person, serving as a generic user profile avatar. The lighting is clean and balanced, suitable for a modern corporate application. The background is subtle and neutral to ensure the focus remains on the face." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDboujOi0u1h7dAXkG5wnCS8I8aW0t_ftQQvUP2E7NGg883crGfJhGSROMI24DGlgM1xcaNd1P7TH4LxSGp0vo5t0Ems-h_aCofSUm-_t5Z4U9qJE_zg0Tqg8xOlF-Ubyp_6mVpBRckXQjqP2mxUjAGN7s3lRY1uxKRzL-t5nxI_lJh1V4hWJxb2F3yJ6aj9pXtD7zvIsN2sw4vGeZ6X9N-_dWL2p1r69EWBVh0-6Da_7ZFp3L7BLfkxRuCgyWHNolcUZ-S6Jg7fvbm">
+</div>
+</div>
+</header>
+<!-- Main Content -->
+<main class="flex-1 p-margin-mobile md:p-margin-desktop overflow-y-auto bg-surface-container-lowest">
+<div class="max-w-6xl mx-auto space-y-xl">
+<header class="space-y-sm">
+<h2 class="font-headline-lg text-headline-lg text-on-surface">Cruce de Archivos Excel</h2>
+<p class="font-body-lg text-body-lg text-secondary">Sube dos archivos para comparar y combinar sus datos automáticamente.</p>
+</header>
+<!-- Upload Zones -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-gutter">
+<!-- Base File -->
+<div class="border-2 border-dashed border-[#707070] rounded bg-surface hover:border-primary hover:bg-[rgba(227,6,19,0.05)] transition-all p-xl flex flex-col items-center justify-center min-h-[240px] text-center cursor-pointer group">
+<div class="h-16 w-16 bg-surface-container rounded-full flex items-center justify-center mb-md group-hover:bg-primary-container transition-colors">
+<span class="material-symbols-outlined text-[32px] text-secondary group-hover:text-on-primary transition-colors" data-icon="upload_file">upload_file</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface mb-xs">Archivo Base (Principal)</h3>
+<p class="font-body-md text-body-md text-secondary mb-md">Arrastra tu archivo aquí o</p>
+<span class="font-button text-button text-primary uppercase">Browse Files</span>
+</div>
+<!-- Cross File -->
+<div class="border-2 border-dashed border-[#707070] rounded bg-surface hover:border-primary hover:bg-[rgba(227,6,19,0.05)] transition-all p-xl flex flex-col items-center justify-center min-h-[240px] text-center cursor-pointer group">
+<div class="h-16 w-16 bg-surface-container rounded-full flex items-center justify-center mb-md group-hover:bg-primary-container transition-colors">
+<span class="material-symbols-outlined text-[32px] text-secondary group-hover:text-on-primary transition-colors" data-icon="post_add">post_add</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface mb-xs">Archivo a Cruzar (Datos Extra)</h3>
+<p class="font-body-md text-body-md text-secondary mb-md">Arrastra tu archivo aquí o</p>
+<span class="font-button text-button text-primary uppercase">Browse Files</span>
+</div>
+</div>
+<!-- Action Bar -->
+<div class="flex justify-end pt-md border-t border-surface-variant">
+<button class="bg-primary-container text-on-primary font-button text-button uppercase py-md px-xl rounded hover:bg-[#B3050F] transition-colors flex items-center gap-sm">
+<span class="material-symbols-outlined" data-icon="play_arrow" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+                        Ejecutar Cruce
+                    </button>
+</div>
+<!-- Preview Section -->
+<section class="border border-[#E5E5E5] rounded bg-surface-container-lowest mt-xl">
+<div class="p-md border-b border-[#E5E5E5] bg-[#F5F5F5]">
+<h3 class="font-headline-sm text-headline-sm text-on-surface">Previsualización de Resultados</h3>
+</div>
+<div class="p-xl flex flex-col items-center justify-center min-h-[300px] text-center">
+<span class="material-symbols-outlined text-[64px] text-surface-variant mb-md" data-icon="table_view" style="font-variation-settings: 'FILL' 0;">table_view</span>
+<p class="font-body-lg text-body-lg text-secondary max-w-md mx-auto">Sube ambos archivos y ejecuta el cruce para ver una previsualización de los datos combinados aquí.</p>
+</div>
+</section>
+</div>
+</main>
+<!-- Footer -->
+<footer class="bg-surface-container-lowest text-primary font-label-md text-label-md docked bottom-0 w-full flex justify-between items-center px-margin-desktop py-md shrink-0">
+<span class="font-bold text-secondary">© 2024 elmer AUTOMOCIÓN. All rights reserved.</span>
+<div class="flex gap-md">
+<a class="text-secondary hover:text-primary underline transition-opacity duration-150" href="#">Version 2.4.0</a>
+<a class="text-secondary hover:text-primary underline transition-opacity duration-150" href="#">Privacy Policy</a>
+<a class="text-secondary hover:text-primary underline transition-opacity duration-150" href="#">Terms of Service</a>
+</div>
+</footer>
+</div>
+
+
+</body></html>

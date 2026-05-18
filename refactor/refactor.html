@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Elmer Automator - Multi Proveedor</title>
+    <!-- Tailwind CSS (Simulando nuestro archivo CSS separado) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+    <style>
+        .drop-zone { transition: all 0.2s ease; }
+        .drop-zone.dragover { background-color: #eff6ff; border-color: #3b82f6; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 font-sans min-h-screen flex flex-col">
+
+    <!-- ========================================================= -->
+    <!-- ARCHIVO VIRTUAL: index.html (Interfaz Gráfica)            -->
+    <!-- ========================================================= -->
+    
+    <nav class="bg-slate-900 text-white shadow-md flex-shrink-0 border-b-4 border-blue-500">
+        <div class="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <svg class="h-8 w-8 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                </svg>
+                <h1 class="text-xl font-bold tracking-wide">Elmer Automator <span class="text-blue-400 font-light text-sm ml-2">v2.0 Modular</span></h1>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto px-4 py-8 flex-grow flex flex-col w-full">
+        <div id="status-message" class="hidden mb-6 p-4 rounded-lg border shadow-sm transition-all duration-300">
+            <div class="flex items-center gap-3"><span id="status-icon"></span><p id="status-text" class="font-medium"></p></div>
+        </div>
+
+        <div id="upload-section" class="bg-white rounded-xl shadow-md border border-gray-200 p-6 mb-8 transition-all duration-500">
+            
+            <!-- Selector de Proveedor -->
+            <div class="mb-8 p-4 bg-blue-50 rounded-lg border border-blue-100">
+                <label class="block text-sm font-bold text-blue-900 mb-2">Selecciona el Proveedor a Procesar:</label>
+                <select id="provider-select" class="w-full md:w-1/2 p-3 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 font-medium">
+                    <option value="" disabled selected>-- Elige un proveedor --</option>
+                    <option value="cospel">Cospel (Código 87)</option>
+                    <option value="generico" disabled>Valeo (Próximamente)</option>
+                    <option value="generico" disabled>Bosch (Próximamente)</option>
+                </select>
+            </div>
+
+            <!-- Zonas de Subida -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8 opacity-50 pointer-events-none transition-opacity duration-300" id="file-drop-zones">
+                <div>
+                    <h2 class="text-sm font-bold text-gray-700 mb-2">1. Base de Datos Elmer (Completa)</h2>
+                    <label for="elmer-file" class="drop-zone flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
+                        <div class="flex flex-col items-center justify-center pt-5 pb-6">
+                            <p class="text-sm text-gray-500"><span class="font-semibold">Subir Excel Elmer</span></p>
+                        </div>
+                        <input id="elmer-file" type="file" class="hidden" accept=".xlsx, .xls, .csv" />
+                    </label>
+                    <div id="elmer-file-name" class="mt-2 text-xs text-blue-600 font-bold hidden text-center"></div>
+                </div>
+                <div>
+                    <h2 class="text-sm font-bold text-gray-700 mb-2">2. Tarifa del Proveedor (Nueva)</h2>
+                    <label for="tarifa-file" class="drop-zone flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
+                        <div class="flex flex-col items-center justify-center pt-5 pb-6">
+                            <p class="text-sm text-gray-500"><span class="font-semibold">Subir Excel Proveedor</span></p>
+                        </div>
+                        <input id="tarifa-file" type="file" class="hidden" accept=".xlsx, .xls, .csv" />
+                    </label>
+                    <div id="tarifa-file-name" class="mt-2 text-xs text-blue-600 font-bold hidden text-center"></div>
+                </div>
+            </div>
+
+            <div class="flex justify-center">
+                <button id="process-btn" disabled class="bg-gray-400 text-white font-bold py-3 px-8 rounded-lg shadow transition-all duration-300 cursor-not-allowed">
+                    Procesar Proveedor
+                </button>
+            </div>
+        </div>
+
+        <!-- Panel de Resultados -->
+        <div id="results-panel" class="hidden flex-col flex-grow">
+            <!-- Interfaz de pestañas y tabla (similar a la versión anterior) -->
+            <div class="bg-white rounded-xl shadow-md border border-gray-200 flex flex-col flex-grow overflow-hidden">
+                <div class="bg-gray-50 px-6 py-4 border-b border-gray-200 flex flex-col md:flex-row justify-between items-center gap-4">
+                    <h3 class="text-lg font-bold text-gray-800" id="results-title">Resultados</h3>
+                    <button id="btn-export-excel" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm font-bold shadow">
+                        📥 Exportar Excel Completo
+                    </button>
+                </div>
+                <div class="border-b border-gray-200 bg-white">
+                    <nav class="flex px-6 space-x-6" id="tabs-nav">
+                        <button onclick="AppEngine.switchTab('cruzados')" id="tab-cruzados" class="tab-btn active-tab border-blue-500 text-blue-600 py-3 px-2 border-b-2 font-bold text-sm">✅ Cruzados <span id="count-cruzados" class="ml-1 bg-blue-100 py-0.5 px-2 rounded-full">0</span></button>
+                        <button onclick="AppEngine.switchTab('elmer')" id="tab-elmer" class="tab-btn border-transparent text-gray-500 py-3 px-2 border-b-2 font-medium text-sm">⚠️ Solo en Elmer <span id="count-elmer" class="ml-1 bg-gray-100 py-0.5 px-2 rounded-full">0</span></button>
+                        <button onclick="AppEngine.switchTab('proveedor')" id="tab-proveedor" class="tab-btn border-transparent text-gray-500 py-3 px-2 border-b-2 font-medium text-sm">✨ Novedades <span id="count-proveedor" class="ml-1 bg-gray-100 py-0.5 px-2 rounded-full">0</span></button>
+                    </nav>
+                </div>
+                <div class="overflow-auto max-h-[500px]">
+                    <table class="w-full text-left text-sm text-gray-600 relative">
+                        <thead class="bg-slate-100 text-slate-700 uppercase font-bold text-xs sticky top-0 z-10 shadow-sm" id="table-header">
+                            <!-- Inyectado dinámicamente según el proveedor -->
+                        </thead>
+                        <tbody id="results-table-body" class="divide-y divide-gray-100 bg-white"></tbody>
+                    </table>
+                </div>
+                <div class="bg-gray-50 px-6 py-3 border-t flex justify-between text-xs text-gray-500">
+                    <span id="showing-text"></span>
+                    <button onclick="location.reload()" class="text-blue-600 font-bold hover:underline">Volver al inicio</button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- ========================================================= -->
+    <!-- ARCHIVO VIRTUAL: js/proveedores/cospel.js                 -->
+    <!-- Lógica de limpieza y cruce EXCLUSIVA para Cospel          -->
+    <!-- ========================================================= -->
+    <script>
+        const CospelProvider = {
+            id: 'cospel',
+            name: 'Cospel',
+            providerCodeElmer: '87', // Código en la base de datos de Elmer
+            
+            // Función auxiliar para Cospel
+            cleanCode: function(refOriginal) {
+                const ref = String(refOriginal).trim();
+                const textOnly = ["NO PEDIR MAS", "DESCATALOGADO", "A DESCATALOGAR", "CATALOGO COSPEL", "CATAL2016", "CATALOGO2013"];
+                if (textOnly.includes(ref)) return { code: ref, note: "SOLO TEXTO" };
+                
+                const match1 = ref.match(/([\s\-]+[A-Za-z].*)$/);
+                if (match1) return { code: ref.substring(0, match1.index).trim().replace(/[\s\-]+$/, ''), note: match1[1].replace(/^[\s\-]+/, '').trim() };
+                
+                const match2 = ref.match(/\s+([A-Za-z].*)$/);
+                if (match2) return { code: ref.substring(0, match2.index).trim(), note: match2[1].trim() };
+
+                return { code: ref, note: "" };
+            },
+
+            // MÉTODO PRINCIPAL REQUERIDO POR EL MOTOR
+            process: function(rawElmer, rawTarifa) {
+                // 1. Cabeceras Elmer
+                let elmerHeaderIdx = rawElmer.findIndex(row => {
+                    const str = row.join("").toLowerCase();
+                    return str.includes("proveedor") && str.includes("referencia");
+                });
+                if (elmerHeaderIdx === -1) throw new Error("No cabeceras en Elmer");
+                
+                const eHeaders = rawElmer[elmerHeaderIdx];
+                const pIdx = eHeaders.findIndex(h => String(h).toLowerCase().includes("proveedor") && !String(h).toLowerCase().includes("ref."));
+                const rpIdx = eHeaders.findIndex(h => String(h).toLowerCase().includes("ref. proveedor"));
+                const reIdx = eHeaders.findIndex(h => String(h).toLowerCase() === "referencia");
+
+                // 2. Limpiar Elmer
+                const elmerCleaned = [];
+                for (let i = elmerHeaderIdx + 1; i < rawElmer.length; i++) {
+                    const row = rawElmer[i];
+                    if (row.length === 0 || !row[pIdx]) continue;
+                    if (String(row[pIdx]).trim() === this.providerCodeElmer) {
+                        const origRef = row[rpIdx] || "";
+                        if (origRef.trim() === "") continue;
+                        const { code, note } = this.cleanCode(origRef);
+                        elmerCleaned.push({ code, note, referencia: row[reIdx] || "", matched: false });
+                    }
+                }
+
+                // 3. Cabeceras Tarifa Cospel
+                let tarifaHeaderIdx = rawTarifa.findIndex(row => {
+                    const str = row.join("").toLowerCase();
+                    return str.includes("code") && str.includes("price");
+                });
+                if (tarifaHeaderIdx === -1) throw new Error("No cabeceras en Tarifa Cospel");
+
+                const tHeaders = rawTarifa[tarifaHeaderIdx];
+                const codeIdx = tHeaders.findIndex(h => String(h).toLowerCase() === "code");
+                const priceIdx = tHeaders.findIndex(h => String(h).toLowerCase().includes("price"));
+                const descIdx = tHeaders.findIndex(h => String(h).toLowerCase().includes("description"));
+
+                // 4. Mapear Tarifa Cospel
+                const tarifaMap = new Map();
+                for (let i = tarifaHeaderIdx + 1; i < rawTarifa.length; i++) {
+                    const row = rawTarifa[i];
+                    if (row.length === 0 || !row[codeIdx]) continue;
+                    const tCode = String(row[codeIdx]).trim();
+                    let tPrice = row[priceIdx];
+                    if (typeof tPrice === 'string') tPrice = parseFloat(tPrice.replace(',', '.'));
+                    tarifaMap.set(tCode, { price: tPrice, desc: descIdx !== -1 ? row[descIdx] : "", matched: false });
+                }
+
+                // 5. Cruzar
+                const cruzados = [], soloElmer = [], soloProveedor = [];
+                
+                elmerCleaned.forEach(item => {
+                    if (tarifaMap.has(item.code)) {
+                        let tData = tarifaMap.get(item.code);
+                        tData.matched = true;
+                        cruzados.push({
+                            "Proveedor": this.providerCodeElmer,
+                            "Code": item.code,
+                            "Estado/Nota": item.note,
+                            "Referencia Elmer": item.referencia,
+                            "Descripción Cospel": tData.desc,
+                            "Precio Compra": tData.price
+                        });
+                    } else {
+                        soloElmer.push({
+                            "Proveedor": this.providerCodeElmer,
+                            "Code": item.code,
+                            "Estado/Nota": item.note,
+                            "Referencia Elmer": item.referencia,
+                            "Precio Compra": "-"
+                        });
+                    }
+                });
+
+                tarifaMap.forEach((data, code) => {
+                    if (!data.matched) {
+                        soloProveedor.push({
+                            "Proveedor": "-",
+                            "Code": code,
+                            "Estado/Nota": "NUEVO",
+                            "Descripción Cospel": data.desc,
+                            "Precio Compra": data.price
+                        });
+                    }
+                });
+
+                // Devolvemos el estándar que el Motor espera
+                return {
+                    providerName: this.name,
+                    cruzados,
+                    soloElmer,
+                    soloProveedor,
+                    columns: ["Proveedor", "Code", "Estado/Nota", "Referencia Elmer", "Descripción Cospel", "Precio Compra"]
+                };
+            }
+        };
+    </script>
+
+
+    <!-- ========================================================= -->
+    <!-- ARCHIVO VIRTUAL: js/motor.js                              -->
+    <!-- App Engine: Interfaz, Eventos, Lectura Excel, Exportación -->
+    <!-- ========================================================= -->
+    <script>
+        const AppEngine = {
+            rawElmerData: null,
+            rawTarifaData: null,
+            currentResult: null,
+            currentTab: 'cruzados',
+
+            // Registro de proveedores (El listado de módulos)
+            Providers: {
+                'cospel': CospelProvider // Aquí añadiríamos 'valeo': ValeoProvider, etc.
+            },
+
+            init: function() {
+                this.bindEvents();
+            },
+
+            bindEvents: function() {
+                const providerSelect = document.getElementById('provider-select');
+                const dropZones = document.getElementById('file-drop-zones');
+
+                providerSelect.addEventListener('change', (e) => {
+                    if (e.target.value) {
+                        dropZones.classList.remove('opacity-50', 'pointer-events-none');
+                    }
+                });
+
+                document.getElementById('elmer-file').addEventListener('change', (e) => this.handleFile(e, 'elmer'));
+                document.getElementById('tarifa-file').addEventListener('change', (e) => this.handleFile(e, 'tarifa'));
+                document.getElementById('process-btn').addEventListener('click', () => this.runProcess());
+                document.getElementById('btn-export-excel').addEventListener('click', () => this.exportExcel());
+            },
+
+            handleFile: function(event, type) {
+                const file = event.target.files[0];
+                if (!file) return;
+
+                document.getElementById(`${type}-file-name`).textContent = `✅ ${file.name}`;
+                document.getElementById(`${type}-file-name`).classList.remove('hidden');
+
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const workbook = XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
+                    const jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], { header: 1, defval: "" });
+                    
+                    if (type === 'elmer') this.rawElmerData = jsonData;
+                    if (type === 'tarifa') this.rawTarifaData = jsonData;
+                    this.checkReady();
+                };
+                reader.readAsArrayBuffer(file);
+            },
+
+            checkReady: function() {
+                const btn = document.getElementById('process-btn');
+                if (this.rawElmerData && this.rawTarifaData && document.getElementById('provider-select').value) {
+                    btn.disabled = false;
+                    btn.className = "bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg shadow-lg transform transition-all hover:-translate-y-1 w-full md:w-auto";
+                }
+            },
+
+            runProcess: function() {
+                const providerId = document.getElementById('provider-select').value;
+                const strategy = this.Providers[providerId];
+
+                if (!strategy) return alert("Estrategia de proveedor no encontrada.");
+                
+                this.showMsg("Procesando...", "info");
+                
+                setTimeout(() => {
+                    try {
+                        // DELEGAMOS LA LÓGICA AL MÓDULO DEL PROVEEDOR (PATRÓN ESTRATEGIA)
+                        this.currentResult = strategy.process(this.rawElmerData, this.rawTarifaData);
+                        
+                        document.getElementById('results-title').textContent = `Resultados: ${this.currentResult.providerName}`;
+                        document.getElementById('count-cruzados').textContent = this.currentResult.cruzados.length;
+                        document.getElementById('count-elmer').textContent = this.currentResult.soloElmer.length;
+                        document.getElementById('count-proveedor').textContent = this.currentResult.soloProveedor.length;
+                        
+                        document.getElementById('upload-section').classList.add('hidden');
+                        document.getElementById('results-panel').classList.remove('hidden');
+                        document.getElementById('status-message').classList.add('hidden');
+                        
+                        this.switchTab('cruzados');
+                    } catch (err) {
+                        console.error(err);
+                        this.showMsg("Error: " + err.message, "error");
+                    }
+                }, 100);
+            },
+
+            switchTab: function(tabId) {
+                this.currentTab = tabId;
+                document.querySelectorAll('.tab-btn').forEach(btn => btn.className = "tab-btn border-transparent text-gray-500 py-3 px-2 border-b-2 font-medium text-sm");
+                document.getElementById(`tab-${tabId}`).className = "tab-btn active-tab border-blue-500 text-blue-600 py-3 px-2 border-b-2 font-bold text-sm";
+
+                let data = [];
+                if (tabId === 'cruzados') data = this.currentResult.cruzados;
+                if (tabId === 'elmer') data = this.currentResult.soloElmer;
+                if (tabId === 'proveedor') data = this.currentResult.soloProveedor;
+
+                this.renderTable(data);
+            },
+
+            renderTable: function(data) {
+                const thead = document.getElementById('table-header');
+                const tbody = document.getElementById('results-table-body');
+                
+                // Render Headers (Dinámicos según el proveedor)
+                let hHtml = "<tr>";
+                this.currentResult.columns.forEach(col => {
+                    hHtml += `<th class="px-4 py-3">${col}</th>`;
+                });
+                hHtml += "</tr>";
+                thead.innerHTML = hHtml;
+
+                // Render Body
+                tbody.innerHTML = '';
+                const limit = data.slice(0, 100);
+                document.getElementById('showing-text').textContent = `Mostrando ${limit.length} de ${data.length} registros.`;
+
+                limit.forEach(row => {
+                    const tr = document.createElement('tr');
+                    tr.className = "hover:bg-blue-50/40 transition-colors";
+                    
+                    this.currentResult.columns.forEach(col => {
+                        let val = row[col] || "-";
+                        let tdClass = "px-4 py-2 border-b border-gray-50";
+                        
+                        if (col === "Precio Compra" && val !== "-") {
+                            val = Number(val).toFixed(3).replace('.', ',') + " €";
+                            tdClass += " text-right font-bold text-emerald-700 bg-emerald-50/20";
+                        } else if (col === "Estado/Nota" && val !== "-") {
+                            val = `<span class="px-2 py-0.5 bg-amber-100 text-amber-800 rounded font-bold text-xs border border-amber-200">${val}</span>`;
+                        }
+
+                        tr.innerHTML += `<td class="${tdClass}">${val}</td>`;
+                    });
+                    tbody.appendChild(tr);
+                });
+            },
+
+            exportExcel: function() {
+                if (!this.currentResult) return;
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(this.currentResult.cruzados), "✅ Cruzados");
+                XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(this.currentResult.soloElmer), "⚠️ Solo Elmer");
+                XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(this.currentResult.soloProveedor), "✨ Solo Tarifa");
+                XLSX.writeFile(wb, `Cruce_${this.currentResult.providerName}_${new Date().toISOString().split('T')[0]}.xlsx`);
+            },
+
+            showMsg: function(text, type) {
+                const m = document.getElementById('status-message');
+                m.className = "mb-6 p-4 rounded-lg border shadow-sm transition-all duration-300";
+                document.getElementById('status-text').textContent = text;
+                
+                if (type === 'error') m.classList.add('bg-red-50', 'border-red-200', 'text-red-700');
+                if (type === 'info') m.classList.add('bg-blue-50', 'border-blue-200', 'text-blue-700');
+                m.classList.remove('hidden');
+            }
+        };
+
+        // Arrancar el motor al cargar
+        document.addEventListener('DOMContentLoaded', () => AppEngine.init());
+    </script>
+</body>
+</html>

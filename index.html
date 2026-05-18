@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html class="light" lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <title>elmer AUTOMOCIÓN - Dashboard</title>
+    <!-- Tailwind CSS with Forms and Container Queries -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <!-- SheetJS for Excel Processing -->
+    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+    <!-- Custom Styles -->
+    <link href="./css/styles.css" rel="stylesheet">
+    <!-- Tailwind Configuration -->
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "secondary": "#5f5e5e",
+                        "primary": "#b5000b",
+                        "tertiary-fixed-dim": "#c7c6c6",
+                        "tertiary": "#585959",
+                        "surface-container-high": "#e8e8e8",
+                        "on-secondary-fixed-variant": "#474746",
+                        "on-surface": "#1a1c1c",
+                        "on-secondary-container": "#636262",
+                        "on-primary-fixed-variant": "#930007",
+                        "on-primary-fixed": "#410001",
+                        "on-tertiary-fixed": "#1b1c1c",
+                        "outline-variant": "#e9bcb6",
+                        "on-secondary": "#ffffff",
+                        "on-tertiary": "#ffffff",
+                        "surface-container": "#eeeeee",
+                        "tertiary-container": "#717171",
+                        "secondary-container": "#e2dfde",
+                        "on-background": "#1a1c1c",
+                        "primary-fixed-dim": "#ffb4aa",
+                        "inverse-on-surface": "#f1f1f1",
+                        "surface-dim": "#dadada",
+                        "surface-variant": "#e2e2e2",
+                        "on-secondary-fixed": "#1c1b1b",
+                        "on-primary-container": "#fff5f3",
+                        "inverse-primary": "#ffb4aa",
+                        "surface-bright": "#f9f9f9",
+                        "inverse-surface": "#2f3131",
+                        "on-error": "#ffffff",
+                        "tertiary-fixed": "#e4e2e2",
+                        "surface-container-highest": "#e2e2e2",
+                        "surface": "#f9f9f9",
+                        "on-surface-variant": "#5e3f3b",
+                        "on-tertiary-container": "#f8f6f6",
+                        "on-tertiary-fixed-variant": "#464747",
+                        "surface-container-lowest": "#ffffff",
+                        "on-error-container": "#93000a",
+                        "secondary-fixed-dim": "#c8c6c5",
+                        "surface-tint": "#c0000c",
+                        "outline": "#936e69",
+                        "surface-container-low": "#f3f3f3",
+                        "primary-fixed": "#ffdad5",
+                        "background": "#f9f9f9",
+                        "primary-container": "#e30613",
+                        "error-container": "#ffdad6",
+                        "error": "#ba1a1a"
+                    },
+                    "borderRadius": { "DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem" },
+                    "spacing": { "xs": "4px", "gutter": "24px", "md": "16px", "margin-desktop": "40px", "xl": "32px", "unit": "4px", "margin-mobile": "16px", "sm": "8px", "lg": "24px" },
+                    "fontFamily": {
+                        "body-lg": ["Inter"], "headline-md": ["Inter"], "button": ["Inter"], "label-md": ["JetBrains Mono"], "headline-sm": ["Inter"], "headline-lg": ["Inter"], "body-md": ["Inter"]
+                    },
+                    "fontSize": {
+                        "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+                        "button": ["14px", { "lineHeight": "20px", "fontWeight": "600" }],
+                        "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "500" }],
+                        "headline-sm": ["20px", { "lineHeight": "28px", "fontWeight": "600" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }]
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-background text-on-background min-h-screen flex antialiased">
+    
+    <!-- SideNavBar -->
+    <nav class="hidden md:flex text-primary docked left-0 h-full w-64 border-r flex-col py-lg px-md shrink-0 bg-white border-gray-100">
+        <div class="mb-xl">
+            <img alt="elmer logo" class="h-32 w-auto mb-md object-contain" src="./design/logo_elmer.png">
+        </div>
+        <button class="bg-primary-container text-white font-button text-button uppercase py-sm px-md rounded hover:bg-[#B3050F] transition-colors mb-xl flex items-center justify-center gap-sm" onclick="location.reload()">
+            <span class="material-symbols-outlined" data-icon="add" style="font-variation-settings: 'FILL' 0;">add</span>
+            Nueva Consulta
+        </button>
+        <div class="flex-1"></div>
+    </nav>
+    
+    <div class="flex-1 flex flex-col min-w-0">
+        <!-- TopNavBar -->
+        <header class="bg-surface text-primary font-body-lg text-body-lg docked full-width top-0 flex justify-between items-center px-margin-desktop h-16 w-full shrink-0">
+            <div class="flex items-center gap-lg md:hidden">
+            </div>
+            <div class="hidden md:flex items-center gap-xl">
+                <nav class="flex gap-lg">
+                    <a class="text-primary border-b-2 border-primary pb-1 cursor-pointer active:opacity-80" href="#">Dashboard</a>
+                </nav>
+            </div>
+            <div class="flex items-center gap-md">
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="flex-1 p-margin-mobile md:p-margin-desktop overflow-y-auto bg-surface-container-lowest">
+            <div class="max-w-6xl mx-auto space-y-xl">
+                <header class="space-y-sm">
+                    <h2 class="font-headline-lg text-headline-lg text-on-surface">Cruce de Archivos Excel</h2>
+                    <p class="font-body-lg text-body-lg text-secondary">Sube dos archivos para comparar y combinar sus datos automáticamente.</p>
+                </header>
+
+                <div id="status-message" class="hidden p-4 rounded border shadow-sm transition-all duration-300">
+                    <div class="flex items-center gap-3"><p id="status-text" class="font-medium"></p></div>
+                </div>
+
+                <!-- Action Bar (Provider Select) -->
+                <div class="bg-surface-container-low p-md rounded border border-outline-variant flex flex-col md:flex-row items-center gap-md justify-between">
+                    <div class="w-full md:w-1/2">
+                        <label class="block font-label-md text-label-md text-on-surface mb-xs uppercase">Proveedor a Procesar</label>
+                        <select id="provider-select" class="w-full p-sm border border-[#E5E5E5] rounded bg-surface-container-lowest focus:ring-primary focus:border-primary font-body-md text-body-md text-on-surface outline-none">
+                            <option value="" disabled selected>-- Elige un proveedor --</option>
+                            <option value="cospel">Cospel (Código 87)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Upload Zones -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-gutter" id="file-drop-zones">
+                    <!-- Base File -->
+                    <label for="elmer-file" id="elmer-dropzone" class="drop-zone border-2 border-dashed border-[#707070] rounded bg-surface hover:border-primary hover:bg-[rgba(227,6,19,0.05)] transition-all p-xl flex flex-col items-center justify-center min-h-[240px] text-center cursor-pointer group">
+                        <div class="h-16 w-16 bg-surface-container rounded-full flex items-center justify-center mb-md group-hover:bg-primary-container transition-colors">
+                            <span class="material-symbols-outlined text-[32px] text-secondary group-hover:text-white transition-colors" data-icon="description">description</span>
+                        </div>
+                        <h3 class="font-headline-sm text-headline-sm text-on-surface mb-xs">Archivo Base Elmer</h3>
+                        <p id="elmer-file-text" class="font-body-md text-body-md text-secondary mb-md">Arrastra tu archivo aquí o</p>
+                        <span id="elmer-file-name" class="font-body-md text-body-md text-primary font-bold mb-md hidden"></span>
+                        <span class="font-button text-button text-primary uppercase">Browse Files</span>
+                        <input id="elmer-file" type="file" class="hidden" accept=".xlsx, .xls, .csv" />
+                    </label>
+
+                    <!-- Cross File -->
+                    <label for="tarifa-file" id="tarifa-dropzone" class="drop-zone border-2 border-dashed border-[#707070] rounded bg-surface hover:border-primary hover:bg-[rgba(227,6,19,0.05)] transition-all p-xl flex flex-col items-center justify-center min-h-[240px] text-center cursor-pointer group">
+                        <div class="h-16 w-16 bg-surface-container rounded-full flex items-center justify-center mb-md group-hover:bg-primary-container transition-colors">
+                            <span class="material-symbols-outlined text-[32px] text-secondary group-hover:text-white transition-colors" data-icon="file_copy">file_copy</span>
+                        </div>
+                        <h3 class="font-headline-sm text-headline-sm text-on-surface mb-xs">Tarifa Proveedor</h3>
+                        <p id="tarifa-file-text" class="font-body-md text-body-md text-secondary mb-md">Arrastra tu archivo aquí o</p>
+                        <span id="tarifa-file-name" class="font-body-md text-body-md text-primary font-bold mb-md hidden"></span>
+                        <span class="font-button text-button text-primary uppercase">Browse Files</span>
+                        <input id="tarifa-file" type="file" class="hidden" accept=".xlsx, .xls, .csv" />
+                    </label>
+                </div>
+
+                <!-- Action Bar -->
+                <div class="flex justify-end pt-md border-t border-surface-variant">
+                    <button id="process-btn" disabled class="opacity-50 cursor-not-allowed bg-primary-container text-white font-button text-button uppercase py-md px-xl rounded transition-colors flex items-center gap-sm">
+                        <span class="material-symbols-outlined" data-icon="play_arrow" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+                        Generar
+                    </button>
+                </div>
+
+                <!-- Preview Section -->
+                <section class="border border-[#E5E5E5] rounded bg-surface-container-lowest mt-xl overflow-hidden flex flex-col">
+                    <div class="p-md border-b border-[#E5E5E5] bg-[#F5F5F5] flex flex-col md:flex-row justify-between items-center gap-4">
+                        <h3 id="results-title" class="font-headline-sm text-headline-sm text-on-surface">Previsualización de Resultados</h3>
+                        <div class="flex gap-2">
+                            <button id="btn-fullscreen" class="bg-white text-on-surface border border-surface-variant font-button text-button py-sm px-md rounded hover:bg-surface-container transition-colors shadow-sm flex items-center gap-xs">
+                                <span class="material-symbols-outlined" style="font-size: 18px;">fullscreen</span>
+                                Pantalla Completa
+                            </button>
+                            <button id="btn-export-excel" class="bg-secondary-container text-on-secondary-container font-button text-button py-sm px-md rounded hover:bg-[#d0cdcc] transition-colors shadow-sm flex items-center gap-xs">
+                                <span class="material-symbols-outlined" style="font-size: 18px;">download</span>
+                                Exportar Excel Completo
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Placeholder before processing -->
+                    <div id="results-placeholder" class="p-xl flex flex-col items-center justify-center min-h-[300px] text-center">
+                        <span class="material-symbols-outlined text-[64px] text-surface-variant mb-md" data-icon="table_view" style="font-variation-settings: 'FILL' 0;">table_view</span>
+                        <p class="font-body-lg text-body-lg text-secondary max-w-md mx-auto">Sube ambos archivos y ejecuta el cruce para ver los datos combinados aquí.</p>
+                    </div>
+
+                    <!-- Results Content (hidden initially) -->
+                    <div id="results-content" class="hidden flex-col w-full">
+                        <div class="border-b border-[#E5E5E5] bg-surface">
+                            <nav class="flex px-md" id="tabs-nav">
+                                <button id="tab-cruzados" class="tab-btn active-tab border-b-2 border-transparent text-secondary py-md px-md font-button text-button flex items-center gap-xs">
+                                    Cruzados <span id="count-cruzados" class="bg-surface-container-high px-1.5 py-0.5 rounded font-label-md text-label-md">0</span>
+                                </button>
+                                <button id="tab-elmer" class="tab-btn border-b-2 border-transparent text-secondary py-md px-md font-button text-button flex items-center gap-xs">
+                                    Solo Elmer <span id="count-elmer" class="bg-surface-container-high px-1.5 py-0.5 rounded font-label-md text-label-md">0</span>
+                                </button>
+                                <button id="tab-proveedor" class="tab-btn border-b-2 border-transparent text-secondary py-md px-md font-button text-button flex items-center gap-xs">
+                                    Novedades <span id="count-proveedor" class="bg-surface-container-high px-1.5 py-0.5 rounded font-label-md text-label-md">0</span>
+                                </button>
+                            </nav>
+                        </div>
+                        <div class="overflow-auto max-h-[500px] w-full">
+                            <table class="w-full text-left border-collapse">
+                                <thead class="bg-surface-container-lowest sticky top-0 z-10 shadow-sm" id="table-header">
+                                    <!-- Dinámico -->
+                                </thead>
+                                <tbody id="results-table-body" class="bg-surface-container-lowest">
+                                    <!-- Dinámico -->
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="bg-surface-container-low px-md py-sm border-t border-[#E5E5E5] flex justify-between text-secondary font-label-md text-label-md">
+                            <span id="showing-text"></span>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="bg-surface-container-lowest text-primary font-label-md text-label-md docked bottom-0 w-full flex justify-between items-center px-margin-desktop py-md shrink-0 border-t border-gray-100">
+            <span class="font-bold text-secondary">© 2026 elmer AUTOMOCIÓN. All rights reserved.</span>
+            <div class="flex gap-md">
+            </div>
+        </footer>
+    </div>
+    
+    <!-- Fullscreen Modal -->
+    <div id="fullscreen-modal" class="hidden fixed inset-0 z-50 bg-white flex flex-col">
+        <div class="p-md border-b border-[#E5E5E5] bg-[#F5F5F5] flex justify-between items-center shrink-0">
+            <div class="flex items-center gap-md">
+                <h3 class="font-headline-sm text-headline-sm text-on-surface">
+                    Resultados Detallados
+                </h3>
+                <div class="flex bg-surface-container-low rounded p-1 ml-4 border border-[#E5E5E5]" id="fs-tabs">
+                    <button class="fs-tab-btn px-md py-xs rounded text-sm font-medium transition-colors bg-white shadow-sm text-primary" data-tab="cruzados">Cruzados</button>
+                    <button class="fs-tab-btn px-md py-xs rounded text-sm font-medium transition-colors text-secondary hover:text-primary" data-tab="elmer">Solo Elmer</button>
+                    <button class="fs-tab-btn px-md py-xs rounded text-sm font-medium transition-colors text-secondary hover:text-primary" data-tab="proveedor">Solo Proveedor</button>
+                </div>
+            </div>
+            <div class="flex items-center gap-md">
+                <input type="text" id="fs-search" placeholder="Filtrar resultados..." class="px-md py-xs border border-surface-variant rounded text-body-md font-body-md focus:outline-none focus:border-primary w-64 bg-white">
+                <button id="btn-fs-export" class="bg-secondary-container text-on-secondary-container font-button text-button py-sm px-md rounded hover:bg-[#d0cdcc] transition-colors shadow-sm flex items-center gap-xs">
+                    <span class="material-symbols-outlined" style="font-size: 18px;">download</span>
+                    Exportar
+                </button>
+                <button id="btn-close-fs" class="text-secondary hover:bg-surface-container p-sm rounded-full transition-colors flex items-center justify-center">
+                    <span class="material-symbols-outlined" style="font-size: 24px;">close</span>
+                </button>
+            </div>
+        </div>
+        <div class="flex-1 overflow-auto p-md" id="fs-table-container">
+            <table class="w-full text-left border-collapse" id="fs-table">
+                <thead id="fs-table-header" class="bg-[#F5F5F5] sticky top-0 shadow-sm z-10"></thead>
+                <tbody id="fs-table-body" class="bg-white"></tbody>
+            </table>
+        </div>
+        <div class="bg-surface-container-low px-md py-sm border-t border-[#E5E5E5] flex justify-between text-secondary font-label-md text-label-md shrink-0">
+            <span id="fs-showing-text"></span>
+        </div>
+    </div>
+    
+    <script src="./js/providers/cospel.js"></script>
+    <script src="./js/engine.js"></script>
+    <script src="./js/main.js"></script>
+</body>
+</html>
