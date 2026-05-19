@@ -89,10 +89,14 @@
         <div class="mb-xl">
             <img alt="elmer logo" class="h-32 w-auto mb-md object-contain" src="./design/logo_elmer.png">
         </div>
-        <button class="bg-primary-container text-white font-button text-button uppercase py-sm px-md rounded hover:bg-[#B3050F] transition-colors mb-xl flex items-center justify-center gap-sm" onclick="location.reload()">
-            <span class="material-symbols-outlined" data-icon="add" style="font-variation-settings: 'FILL' 0;">add</span>
-            Nueva Consulta
-        </button>
+        <div class="flex flex-col gap-sm mb-xl">
+            <button id="btn-provider-cospel" data-provider="cospel" class="provider-btn bg-surface-container-high text-secondary font-button text-button uppercase py-sm px-md rounded transition-colors hover:bg-surface-container">
+                COSPEL
+            </button>
+            <button id="btn-provider-poliplast" data-provider="poliplast" class="provider-btn bg-surface-container-high text-secondary font-button text-button uppercase py-sm px-md rounded transition-colors hover:bg-surface-container">
+                POLIPLAST
+            </button>
+        </div>
         <div class="flex-1"></div>
     </nav>
     
@@ -110,8 +114,14 @@
             </div>
         </header>
 
+        <!-- Empty State -->
+        <div id="empty-state" class="flex-1 flex flex-col items-center justify-center p-margin-desktop bg-surface-container-lowest">
+            <img alt="elmer logo" src="./design/logo_elmer.png" class="h-48 w-auto object-contain empty-state-pulse mb-lg">
+            <p class="font-body-lg text-body-lg text-secondary text-center max-w-md">Selecciona un proveedor en el menú lateral para comenzar</p>
+        </div>
+
         <!-- Main Content -->
-        <main class="flex-1 p-margin-mobile md:p-margin-desktop overflow-y-auto bg-surface-container-lowest">
+        <main id="main-content" class="hidden flex-1 p-margin-mobile md:p-margin-desktop overflow-y-auto bg-surface-container-lowest">
             <div class="max-w-6xl mx-auto space-y-xl">
                 <header class="space-y-sm">
                     <h2 class="font-headline-lg text-headline-lg text-on-surface">Tarifas</h2>
@@ -120,17 +130,6 @@
 
                 <div id="status-message" class="hidden p-4 rounded border shadow-sm transition-all duration-300">
                     <div class="flex items-center gap-3"><p id="status-text" class="font-medium"></p></div>
-                </div>
-
-                <!-- Action Bar (Provider Select) -->
-                <div class="bg-surface-container-low p-md rounded border border-outline-variant flex flex-col md:flex-row items-center gap-md justify-between">
-                    <div class="w-full md:w-1/2">
-                        <label class="block font-label-md text-label-md text-on-surface mb-xs uppercase">Proveedor a Procesar</label>
-                        <select id="provider-select" class="w-full p-sm border border-[#E5E5E5] rounded bg-surface-container-lowest focus:ring-primary focus:border-primary font-body-md text-body-md text-on-surface outline-none">
-                            <option value="" disabled selected>-- Elige un proveedor --</option>
-                            <option value="cospel">Cospel (Código 87)</option>
-                        </select>
-                    </div>
                 </div>
 
                 <!-- Upload Zones -->
@@ -201,7 +200,7 @@
                                     Solo Elmer <span id="count-elmer" class="bg-surface-container-high px-1.5 py-0.5 rounded font-label-md text-label-md">0</span>
                                 </button>
                                 <button id="tab-proveedor" class="tab-btn border-b-2 border-transparent text-secondary py-md px-md font-button text-button flex items-center gap-xs">
-                                    Novedades <span id="count-proveedor" class="bg-surface-container-high px-1.5 py-0.5 rounded font-label-md text-label-md">0</span>
+                                    <span id="tab-proveedor-label">Solo Tarifa</span> <span id="count-proveedor" class="bg-surface-container-high px-1.5 py-0.5 rounded font-label-md text-label-md">0</span>
                                 </button>
                             </nav>
                         </div>
@@ -241,7 +240,7 @@
                 <div class="flex bg-surface-container-low rounded p-1 ml-4 border border-[#E5E5E5]" id="fs-tabs">
                     <button class="fs-tab-btn px-md py-xs rounded text-sm font-medium transition-colors bg-white shadow-sm text-primary" data-tab="cruzados">Cruzados</button>
                     <button class="fs-tab-btn px-md py-xs rounded text-sm font-medium transition-colors text-secondary hover:text-primary" data-tab="elmer">Solo Elmer</button>
-                    <button class="fs-tab-btn px-md py-xs rounded text-sm font-medium transition-colors text-secondary hover:text-primary" data-tab="proveedor">Solo Proveedor</button>
+                    <button class="fs-tab-btn px-md py-xs rounded text-sm font-medium transition-colors text-secondary hover:text-primary" data-tab="proveedor"><span id="fs-tab-proveedor-label">Solo Tarifa</span></button>
                 </div>
             </div>
             <div class="flex items-center gap-md">
@@ -266,7 +265,31 @@
         </div>
     </div>
     
+    <!-- Header Detection Modal -->
+    <div id="header-modal" class="hidden fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-md">
+        <div class="bg-white rounded shadow-lg w-full max-w-4xl max-h-[85vh] flex flex-col">
+            <div class="p-md border-b border-[#E5E5E5] flex justify-between items-center">
+                <h3 class="font-headline-sm text-headline-sm text-on-surface">No se han detectado los encabezados</h3>
+                <button id="header-modal-close" class="text-secondary hover:bg-surface-container p-sm rounded-full">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+            <div class="p-md overflow-auto flex-1">
+                <p class="font-body-md text-body-md text-secondary mb-md">Indica el número de fila (empezando por 0) que contiene los encabezados del archivo.</p>
+                <div class="overflow-auto border border-[#E5E5E5] rounded mb-md">
+                    <table class="w-full text-left border-collapse text-sm" id="header-modal-table"></table>
+                </div>
+                <div class="flex items-center gap-md">
+                    <label class="font-label-md text-label-md text-on-surface uppercase">Fila de encabezados:</label>
+                    <input id="header-modal-input" type="number" min="0" value="0" class="w-24 p-sm border border-[#E5E5E5] rounded font-body-md text-body-md outline-none focus:border-primary">
+                    <button id="header-modal-confirm" class="bg-primary-container text-white font-button text-button uppercase py-sm px-md rounded hover:bg-[#B3050F] transition-colors">Confirmar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="./js/providers/cospel.js"></script>
+    <script src="./js/providers/poliplast.js"></script>
     <script src="./js/engine.js"></script>
     <script src="./js/main.js"></script>
 </body>

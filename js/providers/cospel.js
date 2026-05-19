@@ -20,13 +20,18 @@ window.CospelProvider = {
     },
 
     // MÉTODO PRINCIPAL REQUERIDO POR EL MOTOR
-    process: function(rawElmer, rawTarifa) {
+    process: function(rawElmer, rawTarifa, overrides) {
+        overrides = overrides || {};
         // 1. Cabeceras Elmer
-        let elmerHeaderIdx = rawElmer.findIndex(row => {
-            const str = row.join("").toLowerCase();
-            return str.includes("proveedor") && str.includes("referencia");
-        });
-        if (elmerHeaderIdx === -1) throw new Error("No cabeceras en Elmer");
+        let elmerHeaderIdx = (overrides.elmerHeaderRow !== undefined)
+            ? overrides.elmerHeaderRow
+            : rawElmer.findIndex(row => {
+                const str = row.join("").toLowerCase();
+                return str.includes("proveedor") && str.includes("referencia");
+            });
+        if (elmerHeaderIdx === -1 || elmerHeaderIdx == null || !rawElmer[elmerHeaderIdx]) {
+            throw { type: 'HEADER_NOT_FOUND', rawData: rawElmer, context: 'elmer', providerId: this.id };
+        }
         
         const eHeaders = rawElmer[elmerHeaderIdx];
         const pIdx = eHeaders.findIndex(h => String(h).toLowerCase().includes("proveedor") && !String(h).toLowerCase().includes("ref."));
@@ -47,11 +52,15 @@ window.CospelProvider = {
         }
 
         // 3. Cabeceras Tarifa Cospel
-        let tarifaHeaderIdx = rawTarifa.findIndex(row => {
-            const str = row.join("").toLowerCase();
-            return str.includes("code") && str.includes("price");
-        });
-        if (tarifaHeaderIdx === -1) throw new Error("No cabeceras en Tarifa Cospel");
+        let tarifaHeaderIdx = (overrides.tarifaHeaderRow !== undefined)
+            ? overrides.tarifaHeaderRow
+            : rawTarifa.findIndex(row => {
+                const str = row.join("").toLowerCase();
+                return str.includes("code") && str.includes("price");
+            });
+        if (tarifaHeaderIdx === -1 || tarifaHeaderIdx == null || !rawTarifa[tarifaHeaderIdx]) {
+            throw { type: 'HEADER_NOT_FOUND', rawData: rawTarifa, context: 'tarifa', providerId: this.id };
+        }
 
         const tHeaders = rawTarifa[tarifaHeaderIdx];
         const codeIdx = tHeaders.findIndex(h => String(h).toLowerCase() === "code");

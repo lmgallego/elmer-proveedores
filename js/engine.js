@@ -11,9 +11,24 @@ const AppEngine = {
     fsRenderedCount: 0,
     fsPageSize: 100,
 
+    activeProvider: null,
+    pendingHeaderContext: null,
+
+    PRICE_COLUMNS: {
+        "Precio Compra": 3,
+        "Price": 2
+    },
+
+    formatPrice: function(val, decimals) {
+        const n = (typeof val === 'number') ? val : parseFloat(String(val).replace(',', '.'));
+        if (isNaN(n)) return "-";
+        return n.toFixed(decimals).replace('.', ',') + " €";
+    },
+
     // Registro de proveedores (El listado de módulos)
     Providers: {
-        'cospel': window.CospelProvider
+        'cospel': window.CospelProvider,
+        'poliplast': window.PoliplastProvider
     },
 
     init: function() {
@@ -21,12 +36,16 @@ const AppEngine = {
     },
 
     bindEvents: function() {
-        const providerSelect = document.getElementById('provider-select');
         const processBtn = document.getElementById('process-btn');
 
-        providerSelect.addEventListener('change', (e) => {
-            this.checkReady();
+        document.querySelectorAll('.provider-btn').forEach(btn => {
+            btn.addEventListener('click', () => this.setActiveProvider(btn.dataset.provider));
         });
+
+        const hClose = document.getElementById('header-modal-close');
+        if (hClose) hClose.addEventListener('click', () => this.closeHeaderModal());
+        const hConfirm = document.getElementById('header-modal-confirm');
+        if (hConfirm) hConfirm.addEventListener('click', () => this.confirmHeaderModal());
 
         document.getElementById('elmer-file').addEventListener('change', (e) => this.handleFile(e, 'elmer'));
         document.getElementById('tarifa-file').addEventListener('change', (e) => this.handleFile(e, 'tarifa'));
@@ -110,22 +129,25 @@ const AppEngine = {
             let isElmerContent = false;
             const limit = Math.min(jsonData.length, 50); // Buscar en las primeras 50 filas
             for(let i=0; i<limit; i++) {
-                const str = jsonData[i].join("").toLowerCase();
-                if (str.includes("proveedor") && str.includes("referencia")) {
+                const str = jsonData[i].join(" ").toLowerCase();
+                const hasRefElmer = str.includes("ref. elmer");
+                const hasRefSimilar = str.includes("ref.") && str.includes("similar");
+                const legacyMatch = str.includes("proveedor") && str.includes("referencia");
+                if (hasRefElmer || hasRefSimilar || legacyMatch) {
                     isElmerContent = true;
                     break;
                 }
             }
-            
+
             let isValid = true;
             let errorMsg = "";
-            
+
             if (type === 'elmer' && !isElmerContent) {
                 isValid = false;
-                errorMsg = "❌ Error: El archivo subido no parece ser el Archivo Base Elmer. Faltan las columnas 'proveedor' o 'referencia'.";
+                errorMsg = "Error: El archivo subido no parece ser el Archivo Base Elmer.";
             } else if (type === 'tarifa' && isElmerContent) {
                 isValid = false;
-                errorMsg = "❌ Error: Has subido el Archivo Base Elmer en la zona de Tarifa Proveedor. Te has equivocado de recuadro.";
+                errorMsg = "Error: Has subido el Archivo Base Elmer en la zona de Tarifa Proveedor. Te has equivocado de recuadro.";
             }
             
             const fileNameEl = document.getElementById(`${type}-file-name`);
@@ -159,9 +181,76 @@ const AppEngine = {
         reader.readAsArrayBuffer(file);
     },
 
+    setActiveProvider: function(providerId) {
+        this.activeProvider = providerId;
+        this.rawElmerData = null;
+        this.rawTarifaData = null;
+        this.currentResult = null;
+
+        const providerName = (this.Providers[providerId] && this.Providers[providerId].name) || 'Tarifa';
+        const tabLabel = document.getElementById('tab-proveedor-label');
+        if (tabLabel) tabLabel.textContent = 'Solo ' + providerName;
+        const fsTabLabel = document.getElementById('fs-tab-proveedor-label');
+        if (fsTabLabel) fsTabLabel.textContent = 'Solo ' + providerName;
+
+        document.querySelectorAll('.provider-btn').forEach(btn => {
+            if (btn.dataset.provider === providerId) {
+                btn.classList.add('active');
+                btn.classList.remove('bg-surface-container-high', 'text-secondary');
+            } else {
+                btn.classList.remove('active');
+                btn.classList.add('bg-surface-container-high', 'text-secondary');
+            }
+        });
+
+        // Reset file UI
+        ['elmer', 'tarifa'].forEach(t => {
+            const input = document.getElementById(`${t}-file`);
+            if (input) input.value = '';
+            const nameEl = document.getElementById(`${t}-file-name`);
+            if (nameEl) { nameEl.classList.add('hidden'); nameEl.innerHTML = ''; }
+            const textEl = document.getElementById(`${t}-file-text`);
+            if (textEl) textEl.classList.remove('hidden');
+        });
+
+        const resultsTitle = document.getElementById('results-title');
+        if (resultsTitle) resultsTitle.textContent = 'Previsualización de Resultados';
+
+        const resultsPlaceholder = document.getElementById('results-placeholder');
+        const resultsContent = document.getElementById('results-content');
+        if (resultsPlaceholder) resultsPlaceholder.classList.remove('hidden');
+        if (resultsContent) { resultsContent.classList.add('hidden'); resultsContent.classList.remove('flex'); }
+
+        ['count-cruzados', 'count-elmer', 'count-proveedor'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = '0';
+        });
+
+        this.currentTab = 'cruzados';
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.classList.remove('active-tab', 'text-primary', 'font-bold');
+            btn.classList.add('text-secondary', 'font-medium');
+        });
+        const defaultTab = document.getElementById('tab-cruzados');
+        if (defaultTab) {
+            defaultTab.classList.add('active-tab', 'text-primary', 'font-bold');
+            defaultTab.classList.remove('text-secondary', 'font-medium');
+        }
+
+        // Show main / hide empty state
+        const empty = document.getElementById('empty-state');
+        const main = document.getElementById('main-content');
+        if (empty) empty.classList.add('hidden');
+        if (main) main.classList.remove('hidden');
+
+        this.showMsg("", "hide");
+        this.checkReady();
+    },
+
     checkReady: function() {
         const btn = document.getElementById('process-btn');
-        if (this.rawElmerData && this.rawTarifaData && document.getElementById('provider-select').value) {
+        if (!btn) return;
+        if (this.rawElmerData && this.rawTarifaData && this.activeProvider) {
             btn.disabled = false;
             btn.classList.remove('opacity-50', 'cursor-not-allowed');
             btn.classList.add('hover:bg-[#B3050F]');
@@ -172,35 +261,84 @@ const AppEngine = {
         }
     },
 
-    runProcess: function() {
-        const providerId = document.getElementById('provider-select').value;
+    runProcess: function(overrides) {
+        overrides = overrides || {};
+        const providerId = this.activeProvider;
         const strategy = this.Providers[providerId];
 
         if (!strategy) return alert("Estrategia de proveedor no encontrada.");
-        
+
         this.showMsg("Procesando...", "info");
-        
+
         setTimeout(() => {
             try {
-                // DELEGAMOS LA LÓGICA AL MÓDULO DEL PROVEEDOR (PATRÓN ESTRATEGIA)
-                this.currentResult = strategy.process(this.rawElmerData, this.rawTarifaData);
-                
+                this.currentResult = strategy.process(this.rawElmerData, this.rawTarifaData, overrides);
+
                 document.getElementById('results-title').textContent = `Resultados: ${this.currentResult.providerName}`;
                 document.getElementById('count-cruzados').textContent = this.currentResult.cruzados.length;
                 document.getElementById('count-elmer').textContent = this.currentResult.soloElmer.length;
                 document.getElementById('count-proveedor').textContent = this.currentResult.soloProveedor.length;
-                
+
                 document.getElementById('results-placeholder').classList.add('hidden');
                 document.getElementById('results-content').classList.remove('hidden');
                 document.getElementById('results-content').classList.add('flex');
-                this.showMsg("", "hide"); // hide status message
-                
+                this.showMsg("", "hide");
+
                 this.switchTab('cruzados');
             } catch (err) {
+                if (err && err.type === 'HEADER_NOT_FOUND') {
+                    this.openHeaderModal(err, overrides);
+                    return;
+                }
                 console.error(err);
-                this.showMsg("Error: " + err.message, "error");
+                this.showMsg("Error: " + (err && err.message ? err.message : err), "error");
             }
         }, 100);
+    },
+
+    openHeaderModal: function(err, prevOverrides) {
+        this.pendingHeaderContext = { context: err.context, prevOverrides: prevOverrides || {} };
+        const tbody = document.getElementById('header-modal-table');
+        if (tbody) {
+            const rows = (err.rawData || []).slice(0, 15);
+            const maxCols = rows.reduce((m, r) => Math.max(m, (r || []).length), 0);
+            let html = '';
+            rows.forEach((r, i) => {
+                html += `<tr class="${i % 2 ? 'bg-surface-container-low' : 'bg-white'} border-b border-[#E5E5E5]">`;
+                html += `<td class="px-sm py-xs font-bold text-secondary">${i}</td>`;
+                for (let c = 0; c < maxCols; c++) {
+                    const v = (r && r[c] != null) ? String(r[c]) : '';
+                    html += `<td class="px-sm py-xs">${v.replace(/</g, '&lt;')}</td>`;
+                }
+                html += '</tr>';
+            });
+            tbody.innerHTML = html;
+        }
+        const input = document.getElementById('header-modal-input');
+        if (input) input.value = 0;
+        this.showMsg("", "hide");
+        document.getElementById('header-modal').classList.remove('hidden');
+    },
+
+    closeHeaderModal: function() {
+        document.getElementById('header-modal').classList.add('hidden');
+        this.pendingHeaderContext = null;
+    },
+
+    confirmHeaderModal: function() {
+        if (!this.pendingHeaderContext) return;
+        const idx = parseInt(document.getElementById('header-modal-input').value, 10);
+        if (isNaN(idx) || idx < 0) {
+            this.showMsg("Índice no válido", "error");
+            return;
+        }
+        const { context, prevOverrides } = this.pendingHeaderContext;
+        const overrides = Object.assign({}, prevOverrides);
+        if (context === 'tarifa') overrides.tarifaHeaderRow = idx;
+        else if (context === 'elmer') overrides.elmerHeaderRow = idx;
+        document.getElementById('header-modal').classList.add('hidden');
+        this.pendingHeaderContext = null;
+        this.runProcess(overrides);
     },
 
     switchTab: function(tabId) {
@@ -247,17 +385,21 @@ const AppEngine = {
             tr.className = "hover:bg-surface-container-low transition-colors border-b border-[#E5E5E5]";
             
             this.currentResult.columns.forEach(col => {
-                let val = row[col] || "-";
+                const raw = row[col];
+                let val = (raw === 0 || raw === "0") ? raw : (raw || "-");
                 let tdClass = "px-md py-sm font-body-md text-body-md text-on-surface";
-                
-                if (col === "Precio Compra" && val !== "-") {
-                    val = Number(val).toFixed(3).replace('.', ',') + " €";
+
+                if (this.PRICE_COLUMNS[col] !== undefined && val !== "-") {
+                    val = this.formatPrice(raw, this.PRICE_COLUMNS[col]);
                     tdClass += " text-right font-bold text-primary";
+                } else if (row._matchedOEMCol && col === row._matchedOEMCol && val !== "-") {
+                    tdClass += " font-bold";
+                    val = `<span style="color:#c0000c">${val}</span>`;
                 } else if (col === "Estado/Nota" && val !== "-") {
-                    let badgeColor = "bg-primary-container text-on-primary-container"; // Red variant
+                    let badgeColor = "bg-primary-container text-on-primary-container";
                     if (val === "SOLO TEXTO") badgeColor = "bg-surface-container-high text-on-surface-variant";
                     if (val === "NUEVO") badgeColor = "bg-secondary-container text-on-secondary-container";
-                    
+
                     val = `<span class="px-xs py-1 ${badgeColor} rounded text-label-md font-label-md border border-outline-variant">${val}</span>`;
                 }
 
@@ -270,9 +412,36 @@ const AppEngine = {
     exportExcel: function() {
         if (!this.currentResult) return;
         const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(this.currentResult.cruzados), "✅ Cruzados");
-        XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(this.currentResult.soloElmer), "⚠️ Solo Elmer");
-        XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(this.currentResult.soloProveedor), "✨ Solo Tarifa");
+        const columns = this.currentResult.columns;
+
+        const stripMeta = (rows) => rows.map(r => {
+            const out = {};
+            Object.keys(r).forEach(k => { if (!k.startsWith('_')) out[k] = r[k]; });
+            return out;
+        });
+
+        const buildSheet = (rows, applyHighlight) => {
+            const clean = stripMeta(rows);
+            const ws = XLSX.utils.json_to_sheet(clean, { header: columns });
+            if (applyHighlight) {
+                rows.forEach((r, i) => {
+                    const matchedCol = r._matchedOEMCol;
+                    if (!matchedCol) return;
+                    const colIdx = columns.indexOf(matchedCol);
+                    if (colIdx === -1) return;
+                    const cellRef = XLSX.utils.encode_cell({ r: i + 1, c: colIdx });
+                    const cell = ws[cellRef];
+                    if (cell) {
+                        cell.s = { font: { bold: true, color: { rgb: "C0000C" } } };
+                    }
+                });
+            }
+            return ws;
+        };
+
+        XLSX.utils.book_append_sheet(wb, buildSheet(this.currentResult.cruzados, true), "Cruzados");
+        XLSX.utils.book_append_sheet(wb, buildSheet(this.currentResult.soloElmer, false), "Solo Elmer");
+        XLSX.utils.book_append_sheet(wb, buildSheet(this.currentResult.soloProveedor, false), 'Solo ' + this.currentResult.providerName);
         XLSX.writeFile(wb, `Cruce_${this.currentResult.providerName}_${new Date().toISOString().split('T')[0]}.xlsx`);
     },
 
@@ -361,17 +530,21 @@ const AppEngine = {
             tr.className = "hover:bg-surface-container-low transition-colors border-b border-[#E5E5E5]";
             
             this.currentResult.columns.forEach(col => {
-                let val = row[col] || "-";
+                const raw = row[col];
+                let val = (raw === 0 || raw === "0") ? raw : (raw || "-");
                 let tdClass = "px-md py-sm font-body-md text-body-md text-on-surface";
-                
-                if (col === "Precio Compra" && val !== "-") {
-                    val = Number(val).toFixed(3).replace('.', ',') + " €";
+
+                if (this.PRICE_COLUMNS[col] !== undefined && val !== "-") {
+                    val = this.formatPrice(raw, this.PRICE_COLUMNS[col]);
                     tdClass += " text-right font-bold text-primary";
+                } else if (row._matchedOEMCol && col === row._matchedOEMCol && val !== "-") {
+                    tdClass += " font-bold";
+                    val = `<span style="color:#c0000c">${val}</span>`;
                 } else if (col === "Estado/Nota" && val !== "-") {
                     let badgeColor = "bg-primary-container text-on-primary-container";
                     if (val === "SOLO TEXTO") badgeColor = "bg-surface-container-high text-on-surface-variant";
                     if (val === "NUEVO") badgeColor = "bg-secondary-container text-on-secondary-container";
-                    
+
                     val = `<span class="px-xs py-1 ${badgeColor} rounded text-label-md font-label-md border border-outline-variant">${val}</span>`;
                 }
 
@@ -379,7 +552,7 @@ const AppEngine = {
             });
             tbody.appendChild(tr);
         });
-        
+
         this.fsRenderedCount += nextBatch.length;
         document.getElementById('fs-showing-text').textContent = `Mostrando ${this.fsRenderedCount} de ${data.length} registros filtrados. (Desplázate hacia abajo para ver más)`;
     },
