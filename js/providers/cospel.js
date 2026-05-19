@@ -20,8 +20,16 @@ window.CospelProvider = {
     },
 
     // MÉTODO PRINCIPAL REQUERIDO POR EL MOTOR
-    process: function(rawElmer, rawTarifa, overrides) {
+    normalizeCode: function(val) {
+        if (val === null || val === undefined) return "";
+        let s = String(val).trim();
+        if (/^\d+\.0+$/.test(s)) s = s.split('.')[0];
+        return s;
+    },
+
+    process: function(rawElmer, rawTarifa, overrides, rawMedidas) {
         overrides = overrides || {};
+        if (rawMedidas === undefined) rawMedidas = null;
         // 1. Cabeceras Elmer
         let elmerHeaderIdx = (overrides.elmerHeaderRow !== undefined)
             ? overrides.elmerHeaderRow
@@ -116,13 +124,76 @@ window.CospelProvider = {
             }
         });
 
-        // Devolvemos el estándar que el Motor espera
+        let columns = ["Proveedor", "Code", "Estado/Nota", "Referencia Elmer", "Descripción Cospel", "Precio Compra"];
+
+        // 6. Enriquecimiento opcional con medidas
+        if (rawMedidas) {
+            const medidasHeaderIdx = (overrides.medidasHeaderRow !== undefined)
+                ? overrides.medidasHeaderRow
+                : rawMedidas.findIndex(row => {
+                    const str = row.join(" ").toLowerCase();
+                    return str.includes("bestellnummer") && (str.includes("länge") || str.includes("lange"));
+                });
+            if (medidasHeaderIdx === -1 || medidasHeaderIdx == null || !rawMedidas[medidasHeaderIdx]) {
+                throw { type: 'HEADER_NOT_FOUND', rawData: rawMedidas, context: 'medidas', providerId: this.id };
+            }
+
+            const mHeaders = rawMedidas[medidasHeaderIdx];
+            const idxCode  = mHeaders.findIndex(h => String(h).trim().toLowerCase().includes("bestellnummer"));
+            const idxLargo = mHeaders.findIndex(h => {
+                const s = String(h).trim().toLowerCase();
+                return s.includes("länge") || s.includes("lange");
+            });
+            const idxAncho = mHeaders.findIndex(h => String(h).trim().toLowerCase().includes("breite"));
+            const idxAlto  = mHeaders.findIndex(h => {
+                const s = String(h).trim().toLowerCase();
+                return s.includes("höhe") || s.includes("hohe");
+            });
+
+            const toCmCeil = (v) => {
+                if (v === "" || v == null) return null;
+                const n = (typeof v === 'number') ? v : parseFloat(String(v).replace(',', '.'));
+                if (isNaN(n)) return null;
+                return Math.ceil(n);
+            };
+
+            const medidasMap = new Map();
+            for (let i = medidasHeaderIdx + 1; i < rawMedidas.length; i++) {
+                const row = rawMedidas[i];
+                if (!row || row.length === 0) continue;
+                const codeKey = this.normalizeCode(idxCode !== -1 ? row[idxCode] : "");
+                if (!codeKey) continue;
+                if (medidasMap.has(codeKey)) continue;
+                medidasMap.set(codeKey, {
+                    largo: idxLargo !== -1 ? toCmCeil(row[idxLargo]) : null,
+                    ancho: idxAncho !== -1 ? toCmCeil(row[idxAncho]) : null,
+                    alto:  idxAlto  !== -1 ? toCmCeil(row[idxAlto])  : null
+                });
+            }
+
+            cruzados.forEach(r => {
+                const key = this.normalizeCode(r["Code"]);
+                const m = medidasMap.get(key);
+                if (m) {
+                    r["Largo"] = m.largo != null ? m.largo : "";
+                    r["Ancho"] = m.ancho != null ? m.ancho : "";
+                    r["Alto"]  = m.alto  != null ? m.alto  : "";
+                } else {
+                    r["Largo"] = "";
+                    r["Ancho"] = "";
+                    r["Alto"]  = "";
+                }
+            });
+
+            columns = columns.concat(["Largo", "Ancho", "Alto"]);
+        }
+
         return {
             providerName: this.name,
             cruzados,
             soloElmer,
             soloProveedor,
-            columns: ["Proveedor", "Code", "Estado/Nota", "Referencia Elmer", "Descripción Cospel", "Precio Compra"]
+            columns
         };
     }
 };

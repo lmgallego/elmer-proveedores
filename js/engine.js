@@ -3,6 +3,7 @@
 const AppEngine = {
     rawElmerData: null,
     rawTarifaData: null,
+    rawMedidasData: null,
     currentResult: null,
     currentTab: 'cruzados',
     fsData: [],
@@ -49,6 +50,8 @@ const AppEngine = {
 
         document.getElementById('elmer-file').addEventListener('change', (e) => this.handleFile(e, 'elmer'));
         document.getElementById('tarifa-file').addEventListener('change', (e) => this.handleFile(e, 'tarifa'));
+        const medidasInput = document.getElementById('medidas-file');
+        if (medidasInput) medidasInput.addEventListener('change', (e) => this.handleFile(e, 'medidas'));
         processBtn.addEventListener('click', () => this.runProcess());
         document.getElementById('btn-export-excel').addEventListener('click', () => this.exportExcel());
         
@@ -83,6 +86,9 @@ const AppEngine = {
         // Drag and drop setup
         this.setupDragAndDrop('elmer-dropzone', 'elmer-file', 'elmer');
         this.setupDragAndDrop('tarifa-dropzone', 'tarifa-file', 'tarifa');
+        if (document.getElementById('medidas-dropzone')) {
+            this.setupDragAndDrop('medidas-dropzone', 'medidas-file', 'medidas');
+        }
     },
 
     setupDragAndDrop: function(zoneId, inputId, type) {
@@ -125,31 +131,45 @@ const AppEngine = {
             const workbook = XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
             const jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], { header: 1, defval: "" });
             
-            // Validación para evitar subir el excel en la casilla equivocada
-            let isElmerContent = false;
-            const limit = Math.min(jsonData.length, 50); // Buscar en las primeras 50 filas
-            for(let i=0; i<limit; i++) {
-                const str = jsonData[i].join(" ").toLowerCase();
-                const hasRefElmer = str.includes("ref. elmer");
-                const hasRefSimilar = str.includes("ref.") && str.includes("similar");
-                const legacyMatch = str.includes("proveedor") && str.includes("referencia");
-                if (hasRefElmer || hasRefSimilar || legacyMatch) {
-                    isElmerContent = true;
-                    break;
-                }
-            }
-
             let isValid = true;
             let errorMsg = "";
 
-            if (type === 'elmer' && !isElmerContent) {
-                isValid = false;
-                errorMsg = "Error: El archivo subido no parece ser el Archivo Base Elmer.";
-            } else if (type === 'tarifa' && isElmerContent) {
-                isValid = false;
-                errorMsg = "Error: Has subido el Archivo Base Elmer en la zona de Tarifa Proveedor. Te has equivocado de recuadro.";
+            if (type === 'elmer' || type === 'tarifa') {
+                let isElmerContent = false;
+                const limit = Math.min(jsonData.length, 50);
+                for(let i=0; i<limit; i++) {
+                    const str = jsonData[i].join(" ").toLowerCase();
+                    const hasRefElmer = str.includes("ref. elmer");
+                    const hasRefSimilar = str.includes("ref.") && str.includes("similar");
+                    const legacyMatch = str.includes("proveedor") && str.includes("referencia");
+                    if (hasRefElmer || hasRefSimilar || legacyMatch) {
+                        isElmerContent = true;
+                        break;
+                    }
+                }
+                if (type === 'elmer' && !isElmerContent) {
+                    isValid = false;
+                    errorMsg = "Error: El archivo subido no parece ser el Archivo Base Elmer.";
+                } else if (type === 'tarifa' && isElmerContent) {
+                    isValid = false;
+                    errorMsg = "Error: Has subido el Archivo Base Elmer en la zona de Tarifa Proveedor. Te has equivocado de recuadro.";
+                }
+            } else if (type === 'medidas') {
+                let isMedidasContent = false;
+                const limit = Math.min(jsonData.length, 15);
+                for (let i = 0; i < limit; i++) {
+                    const str = jsonData[i].join(" ").toLowerCase();
+                    if (str.includes("bestellnummer") && (str.includes("länge") || str.includes("lange"))) {
+                        isMedidasContent = true;
+                        break;
+                    }
+                }
+                if (!isMedidasContent) {
+                    isValid = false;
+                    errorMsg = "Este archivo no parece ser el archivo de Medidas Cospel";
+                }
             }
-            
+
             const fileNameEl = document.getElementById(`${type}-file-name`);
             const fileTextEl = document.getElementById(`${type}-file-text`);
 
@@ -157,14 +177,14 @@ const AppEngine = {
                 this.showMsg(errorMsg, "error");
                 if (fileNameEl) fileNameEl.classList.add('hidden');
                 if (fileTextEl) fileTextEl.classList.remove('hidden');
-                event.target.value = ''; // Limpiar input
+                event.target.value = '';
                 if (type === 'elmer') this.rawElmerData = null;
                 if (type === 'tarifa') this.rawTarifaData = null;
+                if (type === 'medidas') this.rawMedidasData = null;
                 this.checkReady();
                 return;
             }
 
-            // Archivo válido
             this.showMsg("", "hide");
             if (fileNameEl) {
                 fileNameEl.innerHTML = `<span class="material-symbols-outlined align-middle mr-1 text-[20px] text-[#22c55e]" style="font-variation-settings: 'FILL' 1;">check_circle</span>${file.name}`;
@@ -173,9 +193,10 @@ const AppEngine = {
             if (fileTextEl) {
                 fileTextEl.classList.add('hidden');
             }
-            
+
             if (type === 'elmer') this.rawElmerData = jsonData;
             if (type === 'tarifa') this.rawTarifaData = jsonData;
+            if (type === 'medidas') this.rawMedidasData = jsonData;
             this.checkReady();
         };
         reader.readAsArrayBuffer(file);
@@ -185,6 +206,7 @@ const AppEngine = {
         this.activeProvider = providerId;
         this.rawElmerData = null;
         this.rawTarifaData = null;
+        this.rawMedidasData = null;
         this.currentResult = null;
 
         const providerName = (this.Providers[providerId] && this.Providers[providerId].name) || 'Tarifa';
@@ -204,7 +226,7 @@ const AppEngine = {
         });
 
         // Reset file UI
-        ['elmer', 'tarifa'].forEach(t => {
+        ['elmer', 'tarifa', 'medidas'].forEach(t => {
             const input = document.getElementById(`${t}-file`);
             if (input) input.value = '';
             const nameEl = document.getElementById(`${t}-file-name`);
@@ -212,6 +234,17 @@ const AppEngine = {
             const textEl = document.getElementById(`${t}-file-text`);
             if (textEl) textEl.classList.remove('hidden');
         });
+
+        // Toggle medidas zone wrapper + grid cols for Cospel
+        const medidasWrapper = document.getElementById('medidas-zone-wrapper');
+        const grid = document.getElementById('file-drop-zones');
+        if (providerId === 'cospel') {
+            if (medidasWrapper) medidasWrapper.classList.remove('hidden');
+            if (grid) { grid.classList.remove('lg:grid-cols-2'); grid.classList.add('lg:grid-cols-3'); }
+        } else {
+            if (medidasWrapper) medidasWrapper.classList.add('hidden');
+            if (grid) { grid.classList.remove('lg:grid-cols-3'); grid.classList.add('lg:grid-cols-2'); }
+        }
 
         const resultsTitle = document.getElementById('results-title');
         if (resultsTitle) resultsTitle.textContent = 'Previsualización de Resultados';
@@ -272,7 +305,7 @@ const AppEngine = {
 
         setTimeout(() => {
             try {
-                this.currentResult = strategy.process(this.rawElmerData, this.rawTarifaData, overrides);
+                this.currentResult = strategy.process(this.rawElmerData, this.rawTarifaData, overrides, this.rawMedidasData);
 
                 document.getElementById('results-title').textContent = `Resultados: ${this.currentResult.providerName}`;
                 document.getElementById('count-cruzados').textContent = this.currentResult.cruzados.length;
@@ -336,6 +369,7 @@ const AppEngine = {
         const overrides = Object.assign({}, prevOverrides);
         if (context === 'tarifa') overrides.tarifaHeaderRow = idx;
         else if (context === 'elmer') overrides.elmerHeaderRow = idx;
+        else if (context === 'medidas') overrides.medidasHeaderRow = idx;
         document.getElementById('header-modal').classList.add('hidden');
         this.pendingHeaderContext = null;
         this.runProcess(overrides);

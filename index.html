@@ -133,7 +133,8 @@
                 </div>
 
                 <!-- Upload Zones -->
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-gutter" id="file-drop-zones">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-gutter" id="file-drop-zones"
+                     data-cols-2="grid-cols-1 lg:grid-cols-2" data-cols-3="grid-cols-1 lg:grid-cols-3">
                     <!-- Base File -->
                     <label for="elmer-file" id="elmer-dropzone" class="drop-zone border-2 border-dashed border-[#707070] rounded bg-surface hover:border-primary hover:bg-[rgba(227,6,19,0.05)] transition-all p-xl flex flex-col items-center justify-center min-h-[240px] text-center cursor-pointer group">
                         <div class="h-16 w-16 bg-surface-container rounded-full flex items-center justify-center mb-md group-hover:bg-primary-container transition-colors">
@@ -157,6 +158,20 @@
                         <span class="font-button text-button text-primary uppercase">Browse Files</span>
                         <input id="tarifa-file" type="file" class="hidden" accept=".xlsx, .xls, .csv" />
                     </label>
+
+                    <!-- Medidas File (solo Cospel, opcional) -->
+                    <div id="medidas-zone-wrapper" class="hidden">
+                        <label for="medidas-file" id="medidas-dropzone" class="drop-zone border-2 border-dashed border-[#707070] rounded bg-surface hover:border-primary hover:bg-[rgba(227,6,19,0.05)] transition-all p-xl flex flex-col items-center justify-center min-h-[240px] text-center cursor-pointer group h-full">
+                            <div class="h-16 w-16 bg-surface-container rounded-full flex items-center justify-center mb-md group-hover:bg-primary-container transition-colors">
+                                <span class="material-symbols-outlined text-[32px] text-secondary group-hover:text-white transition-colors" data-icon="straighten">straighten</span>
+                            </div>
+                            <h3 class="font-headline-sm text-headline-sm text-on-surface mb-xs">Archivo de Medidas Cospel</h3>
+                            <p id="medidas-file-text" class="font-body-md text-body-md text-secondary mb-md">Opcional. Añade Largo/Ancho/Alto a los cruzados</p>
+                            <span id="medidas-file-name" class="font-body-md text-body-md text-primary font-bold mb-md hidden"></span>
+                            <span class="font-button text-button text-primary uppercase">Browse Files</span>
+                            <input id="medidas-file" type="file" class="hidden" accept=".xlsx, .xls" />
+                        </label>
+                    </div>
                 </div>
 
                 <!-- Action Bar -->
