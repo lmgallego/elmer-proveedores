@@ -29,3 +29,21 @@
     border-bottom-color: transparent;
     transition: all 0.2s;
 }
+
+/* Empty state logo soft fade pulse */
+@keyframes empty-state-fade {
+    0%, 100% { opacity: 0.55; }
+    50% { opacity: 1; }
+}
+.empty-state-pulse {
+    animation: empty-state-fade 3.5s ease-in-out infinite;
+}
+
+/* Provider button active state */
+.provider-btn.active {
+    background-color: #e30613;
+    color: #ffffff;
+}
+.provider-btn.active:hover {
+    background-color: #B3050F;
+}
