@@ -96,6 +96,9 @@
             <button id="btn-provider-poliplast" data-provider="poliplast" class="provider-btn bg-surface-container-high text-secondary font-button text-button uppercase py-sm px-md rounded transition-colors hover:bg-surface-container">
                 POLIPLAST
             </button>
+            <button id="btn-provider-logicompare" data-provider="logicompare" class="provider-btn bg-surface-container-high text-secondary font-button text-button uppercase py-sm px-md rounded transition-colors hover:bg-surface-container">
+                LOGICOMPARE
+            </button>
         </div>
         <div class="flex-1"></div>
     </nav>
@@ -160,7 +163,7 @@
                     </label>
 
                     <!-- Medidas File (solo Cospel, opcional) -->
-                    <div id="medidas-zone-wrapper" class="hidden">
+                    <div id="medidas-zone-wrapper" class="hidden cospel-only">
                         <label for="medidas-file" id="medidas-dropzone" class="drop-zone border-2 border-dashed border-[#707070] rounded bg-surface hover:border-primary hover:bg-[rgba(227,6,19,0.05)] transition-all p-xl flex flex-col items-center justify-center min-h-[240px] text-center cursor-pointer group h-full">
                             <div class="h-16 w-16 bg-surface-container rounded-full flex items-center justify-center mb-md group-hover:bg-primary-container transition-colors">
                                 <span class="material-symbols-outlined text-[32px] text-secondary group-hover:text-white transition-colors" data-icon="straighten">straighten</span>
@@ -172,6 +175,30 @@
                             <input id="medidas-file" type="file" class="hidden" accept=".xlsx, .xls" />
                         </label>
                     </div>
+                </div>
+
+                <!-- LogiCompare Upload Zones -->
+                <div id="logi-zones-wrapper" class="hidden grid grid-cols-1 lg:grid-cols-2 gap-gutter">
+                    <label for="logi-cospel-file" id="logi-cospel-dropzone" class="drop-zone border-2 border-dashed border-[#707070] rounded bg-surface hover:border-primary hover:bg-[rgba(227,6,19,0.05)] transition-all p-xl flex flex-col items-center justify-center min-h-[240px] text-center cursor-pointer group">
+                        <div class="h-16 w-16 bg-surface-container rounded-full flex items-center justify-center mb-md group-hover:bg-primary-container transition-colors">
+                            <span class="material-symbols-outlined text-[32px] text-secondary group-hover:text-white transition-colors" data-icon="table_view">table_view</span>
+                        </div>
+                        <h3 class="font-headline-sm text-headline-sm text-on-surface mb-xs">Cruce Cospel</h3>
+                        <p id="logi-cospel-file-text" class="font-body-md text-body-md text-secondary mb-md">Arrastra el Excel cruzado generado por la app</p>
+                        <span id="logi-cospel-file-name" class="font-body-md text-body-md text-primary font-bold mb-md hidden"></span>
+                        <span class="font-button text-button text-primary uppercase">Browse Files</span>
+                        <input id="logi-cospel-file" type="file" class="hidden" accept=".xlsx, .xls" />
+                    </label>
+                    <label for="logi-poliplast-file" id="logi-poliplast-dropzone" class="drop-zone border-2 border-dashed border-[#707070] rounded bg-surface hover:border-primary hover:bg-[rgba(227,6,19,0.05)] transition-all p-xl flex flex-col items-center justify-center min-h-[240px] text-center cursor-pointer group">
+                        <div class="h-16 w-16 bg-surface-container rounded-full flex items-center justify-center mb-md group-hover:bg-primary-container transition-colors">
+                            <span class="material-symbols-outlined text-[32px] text-secondary group-hover:text-white transition-colors" data-icon="table_view">table_view</span>
+                        </div>
+                        <h3 class="font-headline-sm text-headline-sm text-on-surface mb-xs">Cruce Poliplast</h3>
+                        <p id="logi-poliplast-file-text" class="font-body-md text-body-md text-secondary mb-md">Arrastra el Excel cruzado generado por la app</p>
+                        <span id="logi-poliplast-file-name" class="font-body-md text-body-md text-primary font-bold mb-md hidden"></span>
+                        <span class="font-button text-button text-primary uppercase">Browse Files</span>
+                        <input id="logi-poliplast-file" type="file" class="hidden" accept=".xlsx, .xls" />
+                    </label>
                 </div>
 
                 <!-- Action Bar -->
@@ -209,7 +236,7 @@
                         <div class="border-b border-[#E5E5E5] bg-surface">
                             <nav class="flex px-md" id="tabs-nav">
                                 <button id="tab-cruzados" class="tab-btn active-tab border-b-2 border-transparent text-secondary py-md px-md font-button text-button flex items-center gap-xs">
-                                    Cruzados <span id="count-cruzados" class="bg-surface-container-high px-1.5 py-0.5 rounded font-label-md text-label-md">0</span>
+                                    <span id="tab-cruzados-label">Cruzados</span> <span id="count-cruzados" class="bg-surface-container-high px-1.5 py-0.5 rounded font-label-md text-label-md">0</span>
                                 </button>
                                 <button id="tab-elmer" class="tab-btn border-b-2 border-transparent text-secondary py-md px-md font-button text-button flex items-center gap-xs">
                                     Solo Elmer <span id="count-elmer" class="bg-surface-container-high px-1.5 py-0.5 rounded font-label-md text-label-md">0</span>
@@ -253,7 +280,7 @@
                     Resultados Detallados
                 </h3>
                 <div class="flex bg-surface-container-low rounded p-1 ml-4 border border-[#E5E5E5]" id="fs-tabs">
-                    <button class="fs-tab-btn px-md py-xs rounded text-sm font-medium transition-colors bg-white shadow-sm text-primary" data-tab="cruzados">Cruzados</button>
+                    <button class="fs-tab-btn px-md py-xs rounded text-sm font-medium transition-colors bg-white shadow-sm text-primary" data-tab="cruzados"><span id="fs-tab-cruzados-label">Cruzados</span></button>
                     <button class="fs-tab-btn px-md py-xs rounded text-sm font-medium transition-colors text-secondary hover:text-primary" data-tab="elmer">Solo Elmer</button>
                     <button class="fs-tab-btn px-md py-xs rounded text-sm font-medium transition-colors text-secondary hover:text-primary" data-tab="proveedor"><span id="fs-tab-proveedor-label">Solo Tarifa</span></button>
                 </div>
@@ -305,6 +332,7 @@
 
     <script src="./js/providers/cospel.js"></script>
     <script src="./js/providers/poliplast.js"></script>
+    <script src="./js/providers/logicompare.js"></script>
     <script src="./js/engine.js"></script>
     <script src="./js/main.js"></script>
 </body>

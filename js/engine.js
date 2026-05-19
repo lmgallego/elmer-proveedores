@@ -4,6 +4,8 @@ const AppEngine = {
     rawElmerData: null,
     rawTarifaData: null,
     rawMedidasData: null,
+    rawLogiCospelData: null,
+    rawLogiPoliplastData: null,
     currentResult: null,
     currentTab: 'cruzados',
     fsData: [],
@@ -29,7 +31,8 @@ const AppEngine = {
     // Registro de proveedores (El listado de módulos)
     Providers: {
         'cospel': window.CospelProvider,
-        'poliplast': window.PoliplastProvider
+        'poliplast': window.PoliplastProvider,
+        'logicompare': window.LogiCompareProvider
     },
 
     init: function() {
@@ -52,6 +55,10 @@ const AppEngine = {
         document.getElementById('tarifa-file').addEventListener('change', (e) => this.handleFile(e, 'tarifa'));
         const medidasInput = document.getElementById('medidas-file');
         if (medidasInput) medidasInput.addEventListener('change', (e) => this.handleFile(e, 'medidas'));
+        const logiCospelInput = document.getElementById('logi-cospel-file');
+        if (logiCospelInput) logiCospelInput.addEventListener('change', (e) => this.handleFile(e, 'logi-cospel'));
+        const logiPolInput = document.getElementById('logi-poliplast-file');
+        if (logiPolInput) logiPolInput.addEventListener('change', (e) => this.handleFile(e, 'logi-poliplast'));
         processBtn.addEventListener('click', () => this.runProcess());
         document.getElementById('btn-export-excel').addEventListener('click', () => this.exportExcel());
         
@@ -88,6 +95,12 @@ const AppEngine = {
         this.setupDragAndDrop('tarifa-dropzone', 'tarifa-file', 'tarifa');
         if (document.getElementById('medidas-dropzone')) {
             this.setupDragAndDrop('medidas-dropzone', 'medidas-file', 'medidas');
+        }
+        if (document.getElementById('logi-cospel-dropzone')) {
+            this.setupDragAndDrop('logi-cospel-dropzone', 'logi-cospel-file', 'logi-cospel');
+        }
+        if (document.getElementById('logi-poliplast-dropzone')) {
+            this.setupDragAndDrop('logi-poliplast-dropzone', 'logi-poliplast-file', 'logi-poliplast');
         }
     },
 
@@ -129,8 +142,28 @@ const AppEngine = {
         const reader = new FileReader();
         reader.onload = (e) => {
             const workbook = XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
-            const jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], { header: 1, defval: "" });
-            
+
+            const isLogi = (type === 'logi-cospel' || type === 'logi-poliplast');
+            let sheet;
+            if (isLogi) {
+                sheet = workbook.Sheets["Cruzados"];
+                if (!sheet) {
+                    this.showMsg("Este archivo no contiene la hoja 'Cruzados'. Sube un Excel generado por esta misma app.", "error");
+                    const nameEl = document.getElementById(`${type}-file-name`);
+                    const textEl = document.getElementById(`${type}-file-text`);
+                    if (nameEl) nameEl.classList.add('hidden');
+                    if (textEl) textEl.classList.remove('hidden');
+                    event.target.value = '';
+                    if (type === 'logi-cospel') this.rawLogiCospelData = null;
+                    if (type === 'logi-poliplast') this.rawLogiPoliplastData = null;
+                    this.checkReady();
+                    return;
+                }
+            } else {
+                sheet = workbook.Sheets[workbook.SheetNames[0]];
+            }
+            const jsonData = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "" });
+
             let isValid = true;
             let errorMsg = "";
 
@@ -168,6 +201,32 @@ const AppEngine = {
                     isValid = false;
                     errorMsg = "Este archivo no parece ser el archivo de Medidas Cospel";
                 }
+            } else if (type === 'logi-cospel') {
+                const limit = Math.min(jsonData.length, 15);
+                let ok = false;
+                for (let i = 0; i < limit; i++) {
+                    const str = jsonData[i].join(" | ").toLowerCase();
+                    if (str.includes("code") && str.includes("referencia elmer") && str.includes("largo") && str.includes("ancho") && str.includes("alto")) {
+                        ok = true; break;
+                    }
+                }
+                if (!ok) {
+                    isValid = false;
+                    errorMsg = "El archivo Cruce Cospel no contiene las columnas esperadas (Code, Referencia Elmer, Largo, Ancho, Alto).";
+                }
+            } else if (type === 'logi-poliplast') {
+                const limit = Math.min(jsonData.length, 15);
+                let ok = false;
+                for (let i = 0; i < limit; i++) {
+                    const str = jsonData[i].join(" | ").toLowerCase();
+                    if (str.includes("ref. elmer") && str.includes("largo") && str.includes("ancho") && str.includes("alto")) {
+                        ok = true; break;
+                    }
+                }
+                if (!ok) {
+                    isValid = false;
+                    errorMsg = "El archivo Cruce Poliplast no contiene las columnas esperadas (Ref. ELMER, Largo, Ancho, Alto).";
+                }
             }
 
             const fileNameEl = document.getElementById(`${type}-file-name`);
@@ -181,6 +240,8 @@ const AppEngine = {
                 if (type === 'elmer') this.rawElmerData = null;
                 if (type === 'tarifa') this.rawTarifaData = null;
                 if (type === 'medidas') this.rawMedidasData = null;
+                if (type === 'logi-cospel') this.rawLogiCospelData = null;
+                if (type === 'logi-poliplast') this.rawLogiPoliplastData = null;
                 this.checkReady();
                 return;
             }
@@ -197,6 +258,8 @@ const AppEngine = {
             if (type === 'elmer') this.rawElmerData = jsonData;
             if (type === 'tarifa') this.rawTarifaData = jsonData;
             if (type === 'medidas') this.rawMedidasData = jsonData;
+            if (type === 'logi-cospel') this.rawLogiCospelData = jsonData;
+            if (type === 'logi-poliplast') this.rawLogiPoliplastData = jsonData;
             this.checkReady();
         };
         reader.readAsArrayBuffer(file);
@@ -207,6 +270,8 @@ const AppEngine = {
         this.rawElmerData = null;
         this.rawTarifaData = null;
         this.rawMedidasData = null;
+        this.rawLogiCospelData = null;
+        this.rawLogiPoliplastData = null;
         this.currentResult = null;
 
         const providerName = (this.Providers[providerId] && this.Providers[providerId].name) || 'Tarifa';
@@ -226,7 +291,7 @@ const AppEngine = {
         });
 
         // Reset file UI
-        ['elmer', 'tarifa', 'medidas'].forEach(t => {
+        ['elmer', 'tarifa', 'medidas', 'logi-cospel', 'logi-poliplast'].forEach(t => {
             const input = document.getElementById(`${t}-file`);
             if (input) input.value = '';
             const nameEl = document.getElementById(`${t}-file-name`);
@@ -235,15 +300,47 @@ const AppEngine = {
             if (textEl) textEl.classList.remove('hidden');
         });
 
-        // Toggle medidas zone wrapper + grid cols for Cospel
+        // Toggle standard vs logicompare zones
         const medidasWrapper = document.getElementById('medidas-zone-wrapper');
         const grid = document.getElementById('file-drop-zones');
-        if (providerId === 'cospel') {
-            if (medidasWrapper) medidasWrapper.classList.remove('hidden');
-            if (grid) { grid.classList.remove('lg:grid-cols-2'); grid.classList.add('lg:grid-cols-3'); }
-        } else {
+        const logiWrapper = document.getElementById('logi-zones-wrapper');
+        if (providerId === 'logicompare') {
+            if (grid) grid.classList.add('hidden');
             if (medidasWrapper) medidasWrapper.classList.add('hidden');
-            if (grid) { grid.classList.remove('lg:grid-cols-3'); grid.classList.add('lg:grid-cols-2'); }
+            if (logiWrapper) logiWrapper.classList.remove('hidden');
+        } else {
+            if (logiWrapper) logiWrapper.classList.add('hidden');
+            if (grid) grid.classList.remove('hidden');
+            if (providerId === 'cospel') {
+                if (medidasWrapper) medidasWrapper.classList.remove('hidden');
+                if (grid) { grid.classList.remove('lg:grid-cols-2'); grid.classList.add('lg:grid-cols-3'); }
+            } else {
+                if (medidasWrapper) medidasWrapper.classList.add('hidden');
+                if (grid) { grid.classList.remove('lg:grid-cols-3'); grid.classList.add('lg:grid-cols-2'); }
+            }
+        }
+
+        // Hide non-relevant tabs for LogiCompare and rename Cruzados → Medidas
+        const tabElmer = document.getElementById('tab-elmer');
+        const tabProveedor = document.getElementById('tab-proveedor');
+        const fsTabElmer = document.querySelector('.fs-tab-btn[data-tab="elmer"]');
+        const fsTabProveedor = document.querySelector('.fs-tab-btn[data-tab="proveedor"]');
+        const tabCruzadosLabel = document.getElementById('tab-cruzados-label');
+        const fsTabCruzadosLabel = document.getElementById('fs-tab-cruzados-label');
+        if (providerId === 'logicompare') {
+            if (tabElmer) tabElmer.classList.add('hidden');
+            if (tabProveedor) tabProveedor.classList.add('hidden');
+            if (fsTabElmer) fsTabElmer.classList.add('hidden');
+            if (fsTabProveedor) fsTabProveedor.classList.add('hidden');
+            if (tabCruzadosLabel) tabCruzadosLabel.textContent = 'Medidas';
+            if (fsTabCruzadosLabel) fsTabCruzadosLabel.textContent = 'Medidas';
+        } else {
+            if (tabElmer) tabElmer.classList.remove('hidden');
+            if (tabProveedor) tabProveedor.classList.remove('hidden');
+            if (fsTabElmer) fsTabElmer.classList.remove('hidden');
+            if (fsTabProveedor) fsTabProveedor.classList.remove('hidden');
+            if (tabCruzadosLabel) tabCruzadosLabel.textContent = 'Cruzados';
+            if (fsTabCruzadosLabel) fsTabCruzadosLabel.textContent = 'Cruzados';
         }
 
         const resultsTitle = document.getElementById('results-title');
@@ -283,7 +380,13 @@ const AppEngine = {
     checkReady: function() {
         const btn = document.getElementById('process-btn');
         if (!btn) return;
-        if (this.rawElmerData && this.rawTarifaData && this.activeProvider) {
+        let ready = false;
+        if (this.activeProvider === 'logicompare') {
+            ready = !!(this.rawLogiCospelData && this.rawLogiPoliplastData);
+        } else if (this.activeProvider) {
+            ready = !!(this.rawElmerData && this.rawTarifaData);
+        }
+        if (ready) {
             btn.disabled = false;
             btn.classList.remove('opacity-50', 'cursor-not-allowed');
             btn.classList.add('hover:bg-[#B3050F]');
@@ -305,7 +408,11 @@ const AppEngine = {
 
         setTimeout(() => {
             try {
-                this.currentResult = strategy.process(this.rawElmerData, this.rawTarifaData, overrides, this.rawMedidasData);
+                if (providerId === 'logicompare') {
+                    this.currentResult = strategy.process(this.rawLogiCospelData, this.rawLogiPoliplastData);
+                } else {
+                    this.currentResult = strategy.process(this.rawElmerData, this.rawTarifaData, overrides, this.rawMedidasData);
+                }
 
                 document.getElementById('results-title').textContent = `Resultados: ${this.currentResult.providerName}`;
                 document.getElementById('count-cruzados').textContent = this.currentResult.cruzados.length;
@@ -472,6 +579,25 @@ const AppEngine = {
             }
             return ws;
         };
+
+        if (this.activeProvider === 'logicompare') {
+            const ws = buildSheet(this.currentResult.cruzados, false);
+            // Forzar Referencia Elmer como string
+            const refColIdx = columns.indexOf("Referencia Elmer");
+            if (refColIdx !== -1) {
+                for (let i = 0; i < this.currentResult.cruzados.length; i++) {
+                    const cellRef = XLSX.utils.encode_cell({ r: i + 1, c: refColIdx });
+                    const cell = ws[cellRef];
+                    if (cell) {
+                        cell.t = 's';
+                        cell.v = cell.v == null ? '' : String(cell.v);
+                    }
+                }
+            }
+            XLSX.utils.book_append_sheet(wb, ws, "Medidas");
+            XLSX.writeFile(wb, "Medidas.xlsx");
+            return;
+        }
 
         XLSX.utils.book_append_sheet(wb, buildSheet(this.currentResult.cruzados, true), "Cruzados");
         XLSX.utils.book_append_sheet(wb, buildSheet(this.currentResult.soloElmer, false), "Solo Elmer");
